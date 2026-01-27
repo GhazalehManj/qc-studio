@@ -1,4 +1,4 @@
-# visual-qc
+# qc-studio
 
 Prototyping repo for creating visual QC workflow that can be integrated with Nipoppy. 
 
