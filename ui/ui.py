@@ -1,9 +1,7 @@
 # %%
 import math
 import os
-import pickle
 import re
-import json
 from argparse import ArgumentParser
 from datetime import datetime
 from glob import glob
@@ -14,14 +12,11 @@ from functools import wraps
 import pandas as pd
 import streamlit as st
 from models import MetricQC, QCRecord
+from utils import load_json
 
-import os
 import streamlit as st
 from niivue_component import niivue_viewer
 
-
-# Debug: show keys on every rerun
-# st.write("Session state before initialized:", st.session_state)
 
 st.markdown('<div id="top_of_page"></div>', unsafe_allow_html=True)
 
@@ -79,30 +74,7 @@ rater_name = st.text_input("Rater name:")
 # Show the value dynamically
 st.write("You entered:", rater_name)
  
-def load_json(qc_files_json: str) -> Optional[List[Path]]:
-    """
-    Load a JSON file containing a list of SVG file paths.
-    Validates that the top-level structure is a list.
-    Returns a list of Path objects or None if no file provided.
-    """
-    # loaded_svg_list: Optional[List[Path]] = None
-    # if svg_list_json:
-    qc_files_json = Path(qc_files_json)
-    if not qc_files_json.exists():
-        raise FileNotFoundError(f"JSON not found: {qc_files_json}")
-    try:
-        with open(qc_files_json, "r") as fh:
-            raw = json.load(fh)
-    except Exception as e:
-        raise RuntimeError(f"Failed to parse JSON file {qc_files_json}: {e}")
 
-    if not isinstance(raw, list):
-        raise ValueError("JSON must contain a top-level list of file paths")
-
-    # Convert to Path objects (do not verify existence here; downstream handles missing files)
-    loaded_file_list = [Path(p) for p in raw]
-
-    return loaded_file_list
 
 def niivue_viewer_from_path(filepath: str, height: int = 600, key: str | None = None) -> None:
     """Load a local NIFTI file from `filepath` and display it with `niivue_viewer`.
@@ -131,26 +103,6 @@ def niivue_viewer_from_path(filepath: str, height: int = 600, key: str | None = 
     )
 
 
-# --- Niivue viewer panel (right-side) ---
-# Provides an uploader and a local filepath input to display the niivue viewer
-cols = st.columns([1])
-
-with cols[0]:
-    st.markdown("### Niivue Viewer")
-    # st.container(height=600, border=True).markdown("This is a container with a fixed height of 600px.")
-    
-    # read mri_list_json if provided
-    viewer_path = load_json(mri_list_json)[0] if mri_list_json else None
-    print("viewer_path:", viewer_path)
-
-    try:
-        niivue_viewer_from_path(viewer_path, height=800, key=f"niivue_viewer_path_panel_{os.path.basename(viewer_path)}")
-    except FileNotFoundError:
-        st.error(f"File not found: {viewer_path}")
-    except Exception as e:
-        st.error(f"Failed to load file: {e}")
-
-
 def init_session_state():
     defaults = {
         "current_page": 1,
@@ -161,8 +113,6 @@ def init_session_state():
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
-
-init_session_state()
 
 
 # Pagination
@@ -234,65 +184,6 @@ def save_qc_results_to_csv(out_file, qc_records):
 
     return out_file
 
-def collect_qc_svgs(fmri_dir: str, sub_id: str, pattern: str) -> List[Path]:
-    """
-    Collect SVG QC figures.
-    Returns:
-      - For per-run QC:
-          {
-            "type": "perrun",
-            "data": { ses -> task -> run -> [paths] }
-          }
-      
-      - For global QC:
-          {
-            "type": "global",
-            "data": [list of Path]
-          }
-    """
-    base = Path(fmri_dir) / f"sub-{sub_id}" / "figures"
-    search_pattern = f"sub-{sub_id}*{pattern}.svg"
-    svg_paths = sorted(Path(p) for p in glob(str(base / search_pattern)))
-
-    if not svg_paths:
-        st.warning(f" No {pattern} SVGs found for subject {sub_id}")
-        return {
-        "type": "perrun",
-        "data": {}
-    }
-    # Try extracting entities to see if any file contains session/run/task
-    has_session = False
-    has_run = False
-    has_task = False
-    for p in svg_paths:
-        e = get_entities(p)
-        if e.get("session"): has_session = True
-        if e.get("run"): has_run = True
-        if e.get("task"): has_task = True
-
-    # If none of them exist → GLOBAL metric
-    if not (has_session or has_task or has_run):
-        return {
-            "type": "global",
-            "data": svg_paths
-        }
-    
-    # Otherwise → PER-RUN metric
-    from collections import defaultdict
-    data = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    for p in svg_paths:
-        e = get_entities(p)
-
-        ses = e.get("session") or "ses-NA"
-        task = e.get("task") or "task-NA"
-        run = e.get("run") or "run-NA"
-
-        data[ses][task][run].append(p)
-
-    return {
-        "type": "perrun",
-        "data": data
-    }
 
 def get_entities(filepath: Path) -> Dict[str, Optional[str]]:
     fname = filepath.name
@@ -309,14 +200,6 @@ def get_entities(filepath: Path) -> Dict[str, Optional[str]]:
         "run": f"run-{run.group(1)}" if run else None,
     }
 
-total_rows, current_batch = get_current_batch(
-    participants_df, st.session_state.current_page, st.session_state.batch_size
-)
-
-# Save to CSV
-now = datetime.now()
-out_file = Path(out_dir) / f"fMRIPrep_QC_status.csv"
-
 # --- Decorator ---
 def global_fallback(func):
     """
@@ -331,85 +214,6 @@ def global_fallback(func):
             value = func(sub_id, None, None, None, metric)
         return value
     return wrapper
-
-def get_metrics_from_csv(qc_results: Path, metrics_to_load=None):
-    """
-    Load QC metrics from a CSV file. Returns a tuple:
-        - list of metrics loaded
-        - a function get_val(sub_id, ses_id, run_id, metric) to query the metrics
-
-    Works with composite keys: (subject, session, run)
-    """
-    if metrics_to_load is None:
-        metrics_to_load = [
-            "surface_segmentation_qc",
-            "dseg_qc",
-            "sdc_qc",
-            "coreg_qc",
-            "require_rerun",
-            "notes"
-        ]
-
-    if not qc_results.exists():
-        data_dict = {}
-    else:
-        df_existing = pd.read_csv(qc_results)
-        columns_available = [col for col in metrics_to_load if col in df_existing.columns]
-        if "subject" not in df_existing.columns or not columns_available:
-            data_dict = {}
-        else:
-            # Build dictionary with composite keys (subject, session, run)
-            data_dict = {}
-            for _, row in df_existing.iterrows():
-                subject = row['subject']
-                ses = row['session']
-                if pd.isna(ses):
-                    ses = None
-                else:
-                    ses = str(ses)
-                    if not ses.startswith("ses-"): ses = f"ses-{ses}"
-                run = row['run']
-                if pd.isna(run):
-                    run = None
-                task = row['task']
-                if pd.isna(task):
-                    task =  None
-                key = (subject, ses, task, run)
-                # metrics = {col: row[col] for col in columns_available}
-                metrics = {}
-                for col in columns_available:
-                    val= row[col]
-                    if pd.isna(val):
-                        metrics[col] = None
-                    else:
-                        metrics[col] = val
-                data_dict[key] = metrics
-                for col in ["dseg_qc"]:  # global-only metrics
-                    global_key = (subject, None, None, None)
-                    if global_key not in data_dict:
-                        data_dict[global_key] = {}
-                    data_dict[global_key][col] = row.get(col)
-
-    # --- Define get_val with decorator ---
-    @global_fallback
-    def get_val(sub_id, ses_id=None, task_id=None, run_id=None, metric=None):
-        if sub_id is None or metric is None:
-            return None
-        sub_key = sub_id if sub_id.startswith("sub-") else f"sub-{sub_id}"
-        key = (sub_key, ses_id, task_id, run_id)
-        return data_dict.get(key, {}).get(metric, None)
-
-    return data_dict, get_val
-
-# Load the existing qc_results if exist
-data_dict, get_val = get_metrics_from_csv(out_file)
-
-# If svg_list_json is provided, load the list of SVG paths
-# loaded_svg_list: Optional[List[Path]] = None
-if svg_list_json:
-    print("Loading SVG list from JSON:", svg_list_json)
-    loaded_svg_list = load_json(svg_list_json)
-    print("Loaded SVG list from JSON:", loaded_svg_list)
 
 
 def collect_qc_svgs_from_list(svg_paths_list: List[Path], sub_id: str, pattern: str) -> Dict:
@@ -498,14 +302,7 @@ def display_svg_group(
         if run: key += f"_{run}"
         key += f"_{metric_name}"
 
-        # Load existing value from CSV if present
-        stored_val = get_val(
-            sub_id=f"sub-{sub_id}",
-            ses_id=ses,
-            task_id=task,
-            run_id=run,
-            metric=metric_name
-        )
+        stored_val = None
 
         qc_choice = st.radio(
             f"{qc_name} QC:",
@@ -521,6 +318,39 @@ def display_svg_group(
         ))
 
 
+# Initialize session state
+init_session_state()
+
+total_rows, current_batch = get_current_batch(
+    participants_df, st.session_state.current_page, st.session_state.batch_size
+)
+
+# Save to CSV
+now = datetime.now()
+out_file = Path(out_dir) / f"fMRIPrep_QC_status.csv"
+
+## Streamlit UI Layout
+# Top Pagination Controls
+
+cols = st.columns([1])
+
+with cols[0]:
+    st.markdown("### Niivue Viewer")
+    
+    # read mri_list_json if provided
+    viewer_path = load_json(mri_list_json)[0] if mri_list_json else None
+    print("viewer_path:", viewer_path)
+
+    try:
+        niivue_viewer_from_path(viewer_path, height=800, key=f"niivue_viewer_path_panel_{os.path.basename(viewer_path)}")
+    except FileNotFoundError:
+        st.error(f"File not found: {viewer_path}")
+    except Exception as e:
+        st.error(f"Failed to load file: {e}")
+
+
+loaded_svg_list = load_json(svg_list_json)
+
 # Collect all the current batch subject metrics
 qc_records = []
 for _, row in current_batch.iterrows():
@@ -535,10 +365,10 @@ for _, row in current_batch.iterrows():
         ("sdc_bold", "Susceptible Distortion Correction", "sdc_qc"),
         ("coreg_bold", "Coregistration", "coreg_qc")
     ]:
-        if loaded_svg_list is not None:
-            svg_bundle = collect_qc_svgs_from_list(loaded_svg_list, sub_id, pattern)
-        else:
-            svg_bundle = collect_qc_svgs(fmri_dir, sub_id, pattern)
+        # if loaded_svg_list is not None:
+        svg_bundle = collect_qc_svgs_from_list(loaded_svg_list, sub_id, pattern)
+        # else:
+        #     svg_bundle = collect_qc_svgs(fmri_dir, sub_id, pattern)
         for ses, task_dict in svg_bundle["data"].items():
             for task, run_dict in task_dict.items():
                 for run, svg_list in run_dict.items():
@@ -562,8 +392,8 @@ for _, row in current_batch.iterrows():
             )
         # --- Require rerun QC radio ---
         metric = "require_rerun"
-        stored_val = get_val(f"sub-{sub_id}", ses, task, run, metric)
-        # stored_val = None
+        # stored_val = get_val(f"sub-{sub_id}", ses, task, run, metric)
+        stored_val = None
         options = ("YES", "NO")
         require_rerun = st.radio(
             f"Require rerun?",
@@ -580,9 +410,6 @@ for _, row in current_batch.iterrows():
         # stored_val = get_val(f"sub-{sub_id}", ses, task, run, metric)
         notes = st.text_input(f"***NOTES***", key=f"{sub_id}_{ses}_{task}_{run}_notes", value=stored_val)
         run_metrics.append(MetricQC(name="QC_notes", notes=notes))
-        # all_metrics = global_metrics + run_metrics
-    # st.write(subject_metrics)
-    
     
     # Create QCRecord
         record = QCRecord(
@@ -652,20 +479,15 @@ with bottom_menu[1]:
             st.rerun()  # Force rerun to update immediately
 
 # add another button to save the results without changing page
-with bottom_menu[2]:
-    if st.button("💾 Save QC results to CSV"):
+with bottom_menu[1]:
+    if st.button("💾 Save QC results to CSV", width=1000):
         out_path = save_qc_results_to_csv(out_file, qc_records)
         st.success(f"QC results saved to: {out_path}")
 
 with bottom_menu[0]:
     st.markdown(f"Page **{st.session_state.current_page}** of **{total_pages}**")
 
-# st.write("The current session state is:", qc_records)
-
 st.write("The current session state is:", len(st.session_state))
-# if st.button("Save QC results to CSV"):
-#     out_path = save_qc_results_to_csv(out_file, qc_records)
-#     st.success(f"QC results saved to: {out_path}")
 
 st.markdown(
     """
