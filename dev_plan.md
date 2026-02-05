@@ -57,3 +57,12 @@
 
 - Write <rater>_qc_scores.tsv (see [layout.py](./ui/layout.py))
      - Handle overwrite / append  
+
+
+## Pipelines to support
+- mriqc
+- freesurfer
+- fmriprep
+- qsiprep
+- qsirecon
+- [agitation](https://github.com/Neuro-iX/agitation?tab=readme-ov-file)
