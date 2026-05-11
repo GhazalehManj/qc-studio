@@ -58,6 +58,8 @@ DEFAULT_OVERLAY_OPACITY = 0.5
 
 # Column layout ratios
 NIIVUE_SECONDARY_RATIO = [0.1, 0.3, 0.6]
+# Split for viewer area when Niivue + SVG (+ optional third panel) layouts need two columns
+NIIVUE_SVG_RATIO = [0.55, 0.45]
 EQUAL_RATIO = [0.5, 0.5]
 RATING_IQM_RATIO = [0.4, 0.6]
 RATER_INFO_RATIO = [1, 1, 1]

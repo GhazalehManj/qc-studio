@@ -4,13 +4,13 @@ from models import QCConfig
 from constants import SUBSTITUTIONS_DICT
 
 
-def parse_qc_config(qc_json, qc_task, substitution_values) -> dict:
+def parse_qc_config(qc_json, qc_task, substitution_values=None) -> dict:
 	"""Parse a QC JSON file using the QCConfig Pydantic model.
 
 	Returns a dict with keys:
 	  - 'base_mri_image_path': Path | None
 	  - 'overlay_mri_image_path': Path | None
-	  - 'svg_montage_path': Path | None
+	  - 'svg_montage_path': list[Path] | None
 	  - 'iqm_path': Path | None
 
 	If the file is missing, invalid, or the requested qc_task is not present,
@@ -25,9 +25,12 @@ def parse_qc_config(qc_json, qc_task, substitution_values) -> dict:
 		raw_text = qc_json_path.read_text()
 
 		# Make all the substitutions in the raw text before parsing with Pydantic
+		sub_vals = substitution_values or {}
 		for key, substitution in SUBSTITUTIONS_DICT.items():
 			if substitution in raw_text:
-				raw_text = raw_text.replace(substitution, substitution_values.get(key))
+				val = sub_vals.get(key)
+				if val is not None:
+					raw_text = raw_text.replace(substitution, str(val))
 
 		qcconf = QCConfig.model_validate_json(raw_text)
 	except Exception:

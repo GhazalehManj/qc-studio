@@ -48,12 +48,9 @@ def save_qc_results_to_csv(out_file, qc_records, drop_duplicates=True):
 			print("Unknown record format")
 
 		participant_id = rec_dict.get("participant_id") or ""
-		if participant_id.startswith("sub-"):
-			participant_id = participant_id[4:]
-
 		session_id = rec_dict.get("session_id") or ""
-		if session_id.startswith("ses-"):
-			session_id = str(session_id[4:])
+		if session_id is not None:
+			session_id = str(session_id)
 
 		row = {
 			"qc_task": rec_dict.get("qc_task"),

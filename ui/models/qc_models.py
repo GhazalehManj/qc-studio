@@ -12,7 +12,7 @@ try:
 except ImportError:
     from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel
+from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator
 
 
 # Future plans:
@@ -61,6 +61,16 @@ class QCTask(BaseModel):
 
     # Path for IQMs or other QC files (e.g. CSV, JSON)
     iqm_path: Annotated[Optional[Path], Field(description="Path to an IQM or other QC SVG/file")] = None
+
+    @field_validator("svg_montage_path", mode="before")
+    @classmethod
+    def _coerce_svg_montage_path(cls, v):
+        """Accept a single path/string from JSON or a list of paths."""
+        if v is None:
+            return None
+        if isinstance(v, (list, tuple)):
+            return [str(Path(x)) for x in v]
+        return [str(Path(v))]
 
 
 class QCConfig(RootModel[Dict[str, QCTask]]):

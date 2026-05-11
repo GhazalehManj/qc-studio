@@ -5,7 +5,11 @@ from constants import (
     MESSAGES, ERROR_MESSAGES
 )
 from utils.data_loaders import load_mri_data
-from niivue_component import niivue_viewer
+
+try:
+    from niivue_component import niivue_viewer
+except ImportError:
+    from _niivue_viewer_fallback import niivue_viewer
 
 
 class NiivueViewerConfig:
@@ -134,8 +138,7 @@ class NiivueViewerManager:
         
         # Only add overlay if checkbox is checked AND overlay data exists
         if config.show_overlay and "overlay_mri_image_bytes" in mri_data:
-            overlay_path = mri_data.get("overlay_mri_image_path")
-            overlay_name = str(overlay_path.name) if overlay_path else "overlay.nii.gz"
+            overlay_name = "overlay"
             
             overlays.append({
                 "data": mri_data["overlay_mri_image_bytes"],
