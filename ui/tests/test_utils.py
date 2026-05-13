@@ -155,10 +155,14 @@ class TestLoadSvgData:
         
         assert result is not None
         assert isinstance(result, dict)
-        assert len(result) == 2
+        assert len(result) >= 2
+        if "montage" in result:
+            assert result["montage"]["type"] == "png"
         
-        # Check that both SVG files are loaded with correct type
+        # Check that SVG files are loaded with correct type.
         for filename, data in result.items():
+            if filename == "montage":
+                continue
             assert data["type"] == "svg"
             assert "<svg" in data["content"]
 
@@ -180,12 +184,33 @@ class TestLoadSvgData:
         
         assert result is not None
         assert isinstance(result, dict)
-        assert len(result) == 2
+        assert len(result) >= 2
+        if "montage" in result:
+            assert result["montage"]["type"] == "png"
         
-        # Verify we have one SVG and one PNG
-        types = [data["type"] for data in result.values()]
+        # Verify we have one SVG and one PNG in addition to montage.
+        types = [data["type"] for key, data in result.items() if key != "montage"]
         assert "svg" in types
         assert "png" in types
+
+    def test_load_multiple_png_files_creates_montage(self, temp_dir):
+        """Test that multiple raster images produce an auto-layout montage."""
+        from PIL import Image
+
+        png_file1 = temp_dir / "image1.png"
+        png_file2 = temp_dir / "image2.png"
+        Image.new('RGB', (100, 100), color='red').save(png_file1)
+        Image.new('RGB', (100, 100), color='blue').save(png_file2)
+
+        path_dict = {"svg_montage_path": [png_file1, png_file2]}
+
+        result = load_svg_data(temp_dir, path_dict)
+
+        assert result is not None
+        assert isinstance(result, dict)
+        assert len(result) == 3
+        assert "montage" in result
+        assert result["montage"]["type"] == "png"
 
     def test_load_jpeg_file(self, temp_dir):
         """Test loading JPEG file."""

@@ -196,11 +196,9 @@ def load_svg_data(dataset_dir, path_dict: dict, max_montage_rows=None, max_monta
 	if not image_data_dict:
 		return None
 	
-	# Optional grid montage only when caller passes montage limits (tests expect individual images otherwise)
-	if (
-		len(images_for_montage) > 1
-		and (max_montage_rows is not None or max_montage_cols is not None)
-	):
+	# Auto-generate a grid montage whenever multiple images are available.
+	# `create_grid_montage` computes rows/cols when max_rows/max_cols are None.
+	if len(images_for_montage) > 1:
 		try:
 			from .image_processing import create_grid_montage
 			montage_img = create_grid_montage(
