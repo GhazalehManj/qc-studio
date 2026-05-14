@@ -390,12 +390,22 @@ def _display_pagination_in_sidebar(
 
 	with pag_col1:
 		if current_page > 1:
-			if st.button(MESSAGES['previous_button'], width='stretch', key="pag_prev"):
+			if st.button(
+				MESSAGES['previous_button'],
+				width='stretch',
+				key="pag_prev",
+				help=MESSAGES['nav_tooltip_previous'],
+			):
 				SessionManager.previous_page()
 				st.rerun()
 
 	with pag_col2:
-		if st.button(MESSAGES['confirm_next_button'], width='stretch', key="pag_confirm"):
+		if st.button(
+			MESSAGES['confirm_next_button'],
+			width='stretch',
+			key="pag_confirm",
+			help=MESSAGES['nav_tooltip_confirm_next'],
+		):
 			rating = st.session_state.get(f'qc_rating_{SessionManager.get_rating_version()}', QC_RATINGS[0])
 			notes = SessionManager.get_notes()
 			_record_qc_for_current_participant(
@@ -413,7 +423,12 @@ def _display_pagination_in_sidebar(
 
 	with pag_col3:
 		if current_page < total_participants:
-			if st.button(MESSAGES['next_button'], width='stretch', key="pag_next"):
+			if st.button(
+				MESSAGES['next_button'],
+				width='stretch',
+				key="pag_next",
+				help=MESSAGES['nav_tooltip_next'],
+			):
 				SessionManager.next_page()
 				st.rerun()
 	

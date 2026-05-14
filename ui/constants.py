@@ -122,6 +122,15 @@ MESSAGES = {
     'congratulations_title': '🎉 QC Complete! Congratulations! 🎉',
     'export_results_button': '💾 Export Final Results',
     'previous_button': '◀️ Previous',
+    'nav_tooltip_previous': (
+        'Previous: navigates to the previous subject or session without saving any rating changes.'
+    ),
+    'nav_tooltip_next': (
+        'Next: navigates to the next subject or session without saving any rating changes.'
+    ),
+    'nav_tooltip_confirm_next': (
+        'Confirm and Next: saves the current QC rating and advances to the next subject or session.'
+    ),
     'start_over_button': '🔄 Start Over (go to home page)',
     'qc_title': 'Nipoppy QC-Studio: Quality Control',
     'qc_rating_header': 'QC Rating',
