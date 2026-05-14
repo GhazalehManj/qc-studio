@@ -26,6 +26,28 @@ class TestParseQcConfig:
         assert "base_mri_image_path" in result
         assert "svg_montage_path" in result
         assert result["base_mri_image_path"] is not None
+        assert "montage_max_rows" in result
+        assert "montage_max_cols" in result
+        assert result["montage_max_rows"] is None
+        assert result["montage_max_cols"] is None
+
+    def test_parse_qc_config_montage_layout_from_json(self, temp_dir):
+        """Optional montage_max_rows / montage_max_cols are parsed per QC task."""
+        qc_path = temp_dir / "qc.json"
+        qc_path.write_text(
+            json.dumps(
+                {
+                    "anat_wf_qc": {
+                        "svg_montage_path": [str(temp_dir / "a.svg"), str(temp_dir / "b.svg")],
+                        "montage_max_rows": 2,
+                        "montage_max_cols": 2,
+                    }
+                }
+            )
+        )
+        result = parse_qc_config(str(qc_path), "anat_wf_qc")
+        assert result["montage_max_rows"] == 2
+        assert result["montage_max_cols"] == 2
 
     def test_parse_qc_config_nonexistent_task(self, sample_qc_config):
         """Test parsing QC config with non-existent task."""
@@ -35,6 +57,8 @@ class TestParseQcConfig:
         assert result["overlay_mri_image_path"] is None
         assert result["svg_montage_path"] is None
         assert result["iqm_path"] is None
+        assert result["montage_max_rows"] is None
+        assert result["montage_max_cols"] is None
 
     def test_parse_qc_config_invalid_file(self, temp_dir):
         """Test parsing non-existent QC config file."""
@@ -42,6 +66,8 @@ class TestParseQcConfig:
         
         assert result["base_mri_image_path"] is None
         assert result["overlay_mri_image_path"] is None
+        assert result["montage_max_rows"] is None
+        assert result["montage_max_cols"] is None
 
     def test_parse_qc_config_malformed_json(self, temp_dir):
         """Test parsing malformed JSON file."""
@@ -51,12 +77,16 @@ class TestParseQcConfig:
         result = parse_qc_config(str(bad_json_file), "anat_wf_qc")
         
         assert result["base_mri_image_path"] is None
+        assert result["montage_max_rows"] is None
+        assert result["montage_max_cols"] is None
 
     def test_parse_qc_config_none_input(self):
         """Test parsing with None input."""
         result = parse_qc_config(None, "anat_wf_qc")
         
         assert result["base_mri_image_path"] is None
+        assert result["montage_max_rows"] is None
+        assert result["montage_max_cols"] is None
 
 
 class TestLoadMriData:

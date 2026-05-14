@@ -1,4 +1,5 @@
 """Tests for app.py module."""
+import json
 from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch, MagicMock, call
@@ -43,6 +44,22 @@ def _session_state_dict():
     }
 
 
+def _stub_qc_config_path(tmp_path, task="anat_wf_qc", montage_rows_cols=None):
+    """Minimal qc.json on disk for landing page tests."""
+    task_entry = {
+        "base_mri_image_path": str(tmp_path / "base.nii.gz"),
+        "overlay_mri_image_path": str(tmp_path / "overlay.nii.gz"),
+        "svg_montage_path": str(tmp_path / "montage.svg"),
+        "iqm_path": str(tmp_path / "iqm.json"),
+    }
+    if montage_rows_cols is not None:
+        task_entry["montage_max_rows"] = montage_rows_cols[0]
+        task_entry["montage_max_cols"] = montage_rows_cols[1]
+    p = tmp_path / "qc_config.json"
+    p.write_text(json.dumps({task: task_entry}))
+    return str(p)
+
+
 def _columns_side_effect(*args, **kwargs):
     widths = args[0] if args else [1, 1, 1]
     if isinstance(widths, int):
@@ -58,6 +75,7 @@ def _configure_landing_page_streamlit_mock(mock_st):
     form_ctx.__enter__ = MagicMock(return_value=None)
     form_ctx.__exit__ = MagicMock(return_value=False)
     mock_st.form.return_value = form_ctx
+    mock_st.form_submit_button.return_value = False
     mock_st.columns.side_effect = _columns_side_effect
     mock_st.checkbox.return_value = True
     mock_st.text_input.return_value = 'test_rater'
@@ -70,7 +88,7 @@ def _configure_landing_page_streamlit_mock(mock_st):
 @contextmanager
 def _patch_streamlit_for_landing(mock_st):
     _configure_landing_page_streamlit_mock(mock_st)
-    with patch('pages.landing_page.st', mock_st), \
+    with patch('views.landing_page.st', mock_st), \
             patch('managers.session_manager.st', mock_st), \
             patch('managers.panel_layout_manager.st', mock_st), \
             patch('managers.niivue_viewer_manager.st', mock_st):
@@ -80,10 +98,10 @@ def _patch_streamlit_for_landing(mock_st):
 class TestShowLandingPage:
     """Test landing page display functionality."""
 
-    @patch('pages.landing_page.pd.read_csv')
-    def test_landing_page_displays_title(self, mock_read_csv):
+    @patch('views.landing_page.pd.read_csv')
+    def test_landing_page_displays_title(self, mock_read_csv, tmp_path):
         """Test that landing page displays correct title."""
-        from pages.landing_page import show_landing_page
+        from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
             'participant_id': ['sub-ED01', 'sub-ED02', 'sub-ED03']
@@ -96,15 +114,16 @@ class TestShowLandingPage:
                 qc_pipeline='fmriprep',
                 qc_task='anat_wf_qc',
                 out_dir='/output',
-                participant_list='participants.tsv'
+                participant_list='participants.tsv',
+                qc_config_path=_stub_qc_config_path(tmp_path),
             )
 
         mock_st.title.assert_called_once()
 
-    @patch('pages.landing_page.pd.read_csv')
-    def test_landing_page_displays_pipeline_info(self, mock_read_csv):
+    @patch('views.landing_page.pd.read_csv')
+    def test_landing_page_displays_pipeline_info(self, mock_read_csv, tmp_path):
         """Test that landing page displays pipeline information."""
-        from pages.landing_page import show_landing_page
+        from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
             'participant_id': ['sub-ED01', 'sub-ED02']
@@ -117,35 +136,37 @@ class TestShowLandingPage:
                 qc_pipeline='fmriprep',
                 qc_task='anat_wf_qc',
                 out_dir='/output',
-                participant_list='participants.tsv'
+                participant_list='participants.tsv',
+                qc_config_path=_stub_qc_config_path(tmp_path),
             )
 
         mock_st.subheader.assert_called()
 
-    @patch('pages.landing_page.pd.read_csv')
-    def test_landing_page_error_handling(self, mock_read_csv):
+    @patch('views.landing_page.pd.read_csv')
+    def test_landing_page_error_handling(self, mock_read_csv, tmp_path):
         """Test landing page error handling for invalid participant list."""
-        from pages.landing_page import show_landing_page
+        from views.landing_page import show_landing_page
 
         mock_read_csv.side_effect = Exception("File not found")
 
         mock_st = MagicMock()
         mock_st.session_state = _session_state_dict()
-        with patch('pages.landing_page.st', mock_st), \
+        with patch('views.landing_page.st', mock_st), \
                 patch('managers.session_manager.st', mock_st):
             show_landing_page(
                 qc_pipeline='fmriprep',
                 qc_task='anat_wf_qc',
                 out_dir='/output',
-                participant_list='invalid.tsv'
+                participant_list='invalid.tsv',
+                qc_config_path=_stub_qc_config_path(tmp_path),
             )
 
         mock_st.error.assert_called()
 
-    @patch('pages.landing_page.pd.read_csv')
-    def test_landing_page_three_column_layout(self, mock_read_csv):
+    @patch('views.landing_page.pd.read_csv')
+    def test_landing_page_three_column_layout(self, mock_read_csv, tmp_path):
         """Test that landing page creates three-column layout."""
-        from pages.landing_page import show_landing_page
+        from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
             'participant_id': ['sub-ED01']
@@ -158,19 +179,43 @@ class TestShowLandingPage:
                 qc_pipeline='fmriprep',
                 qc_task='anat_wf_qc',
                 out_dir='/output',
-                participant_list='participants.tsv'
+                participant_list='participants.tsv',
+                qc_config_path=_stub_qc_config_path(tmp_path),
             )
 
         mock_st.columns.assert_called()
+
+    @patch('views.landing_page.pd.read_csv')
+    def test_landing_page_applies_montage_defaults_from_qc_json(self, mock_read_csv, tmp_path):
+        """qc.json montage_max_rows/cols seed session once for the QC task."""
+        from views.landing_page import show_landing_page
+
+        mock_df = pd.DataFrame({'participant_id': ['sub-ED01']})
+        mock_read_csv.return_value = mock_df
+        qc_path = _stub_qc_config_path(tmp_path, montage_rows_cols=(2, 3))
+
+        mock_st = MagicMock()
+        with _patch_streamlit_for_landing(mock_st):
+            show_landing_page(
+                qc_pipeline='fmriprep',
+                qc_task='anat_wf_qc',
+                out_dir='/output',
+                participant_list='participants.tsv',
+                qc_config_path=qc_path,
+            )
+
+        assert mock_st.session_state[SESSION_KEYS['montage_max_rows']] == 2
+        assert mock_st.session_state[SESSION_KEYS['montage_max_cols']] == 3
+        assert mock_st.session_state[SESSION_KEYS['montage_defaults_applied_qc_task']] == 'anat_wf_qc'
 
 
 class TestLandingPageRaterInfo:
     """Test rater information section of landing page."""
 
-    @patch('pages.landing_page.pd.read_csv')
-    def test_rater_form_displays(self, mock_read_csv):
+    @patch('views.landing_page.pd.read_csv')
+    def test_rater_form_displays(self, mock_read_csv, tmp_path):
         """Test that rater form is displayed."""
-        from pages.landing_page import show_landing_page
+        from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
             'participant_id': ['sub-ED01']
@@ -183,15 +228,16 @@ class TestLandingPageRaterInfo:
                 qc_pipeline='fmriprep',
                 qc_task='anat_wf_qc',
                 out_dir='/output',
-                participant_list='participants.tsv'
+                participant_list='participants.tsv',
+                qc_config_path=_stub_qc_config_path(tmp_path),
             )
 
         mock_st.form.assert_called()
 
-    @patch('pages.landing_page.pd.read_csv')
-    def test_experience_level_options(self, mock_read_csv):
+    @patch('views.landing_page.pd.read_csv')
+    def test_experience_level_options(self, mock_read_csv, tmp_path):
         """Test that experience level options are presented."""
-        from pages.landing_page import show_landing_page
+        from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
             'participant_id': ['sub-ED01']
@@ -204,7 +250,8 @@ class TestLandingPageRaterInfo:
                 qc_pipeline='fmriprep',
                 qc_task='anat_wf_qc',
                 out_dir='/output',
-                participant_list='participants.tsv'
+                participant_list='participants.tsv',
+                qc_config_path=_stub_qc_config_path(tmp_path),
             )
 
         experience_options = EXPERIENCE_LEVELS
@@ -215,10 +262,10 @@ class TestLandingPageRaterInfo:
 class TestLandingPagePanelSelection:
     """Test panel selection functionality."""
 
-    @patch('pages.landing_page.pd.read_csv')
-    def test_panel_checkboxes_displayed(self, mock_read_csv):
+    @patch('views.landing_page.pd.read_csv')
+    def test_panel_checkboxes_displayed(self, mock_read_csv, tmp_path):
         """Test that panel selection checkboxes are displayed."""
-        from pages.landing_page import show_landing_page
+        from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
             'participant_id': ['sub-ED01']
@@ -231,7 +278,8 @@ class TestLandingPagePanelSelection:
                 qc_pipeline='fmriprep',
                 qc_task='anat_wf_qc',
                 out_dir='/output',
-                participant_list='participants.tsv'
+                participant_list='participants.tsv',
+                qc_config_path=_stub_qc_config_path(tmp_path),
             )
 
         mock_st.checkbox.assert_called()
@@ -254,10 +302,10 @@ class TestLandingPagePanelSelection:
 class TestLandingPageCsvUpload:
     """Test CSV file upload functionality."""
 
-    @patch('pages.landing_page.pd.read_csv')
-    def test_file_uploader_displayed(self, mock_read_csv):
+    @patch('views.landing_page.pd.read_csv')
+    def test_file_uploader_displayed(self, mock_read_csv, tmp_path):
         """Test that file uploader is displayed."""
-        from pages.landing_page import show_landing_page
+        from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
             'participant_id': ['sub-ED01']
@@ -270,7 +318,8 @@ class TestLandingPageCsvUpload:
                 qc_pipeline='fmriprep',
                 qc_task='anat_wf_qc',
                 out_dir='/output',
-                participant_list='participants.tsv'
+                participant_list='participants.tsv',
+                qc_config_path=_stub_qc_config_path(tmp_path),
             )
 
         mock_st.file_uploader.assert_called()
@@ -311,7 +360,13 @@ class TestApp:
         )
 
         mock_st.set_page_config.assert_called()
-        mock_show_landing.assert_called_once()
+        mock_show_landing.assert_called_once_with(
+            'fmriprep',
+            'anat_wf_qc',
+            '/output',
+            'participants.tsv',
+            'config.json',
+        )
 
     @patch('app.SessionManager.is_landing_page_complete', return_value=True)
     @patch('app.SessionManager.init_session_state')

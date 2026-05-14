@@ -12,9 +12,12 @@ def parse_qc_config(qc_json, qc_task, substitution_values=None) -> dict:
 	  - 'overlay_mri_image_path': Path | None
 	  - 'svg_montage_path': list[Path] | None
 	  - 'iqm_path': Path | None
+	  - 'montage_max_rows': int | None
+	  - 'montage_max_cols': int | None
 
 	If the file is missing, invalid, or the requested qc_task is not present,
-	all values will be None. Uses `QCConfig` from `models` for validation.
+	path values will be None and montage limits will be None. Uses `QCConfig`
+	from `models` for validation.
 	"""
 
 	qc_json_path = Path(qc_json) if qc_json else None
@@ -40,6 +43,8 @@ def parse_qc_config(qc_json, qc_task, substitution_values=None) -> dict:
 			"overlay_mri_image_path": None,
 			"svg_montage_path": None,
 			"iqm_path": None,
+			"montage_max_rows": None,
+			"montage_max_cols": None,
 		}
 
 	# qcconf.root is a dict: qc_task -> QCTask (RootModel)
@@ -50,6 +55,8 @@ def parse_qc_config(qc_json, qc_task, substitution_values=None) -> dict:
 			"overlay_mri_image_path": None,
 			"svg_montage_path": None,
 			"iqm_path": None,
+			"montage_max_rows": None,
+			"montage_max_cols": None,
 		}
 
 	# qctask is a QCTask model; its fields are Path or None already
@@ -58,4 +65,6 @@ def parse_qc_config(qc_json, qc_task, substitution_values=None) -> dict:
 		"overlay_mri_image_path": qctask.overlay_mri_image_path,
 		"svg_montage_path": qctask.svg_montage_path,
 		"iqm_path": qctask.iqm_path,
+		"montage_max_rows": qctask.montage_max_rows,
+		"montage_max_cols": qctask.montage_max_cols,
 	}

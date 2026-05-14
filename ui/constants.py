@@ -88,7 +88,9 @@ SESSION_KEYS = {
     'landing_page_complete': 'landing_page_complete',
     'selected_panels': 'selected_panels',
     'montage_max_rows': 'montage_max_rows',
-    'montage_max_cols': 'montage_max_cols'
+    'montage_max_cols': 'montage_max_cols',
+    # Set once per Streamlit session after reading qc.json (avoid re-applying on every rerun)
+    'montage_defaults_applied_qc_task': 'montage_defaults_applied_qc_task',
 }
 
 # File upload settings
@@ -131,6 +133,7 @@ MESSAGES = {
     'play_button': '▶️ Play',
     'pause_button': '⏸️ Pause',
     'back_landing_button': '🏠 Back to Landing Page',
+    'sidebar_subjects_header': 'Subjects',
     'niivue_header': '3D MRI\n(Niivue)',
     'niivue_controls_header': 'Niivue Controls',
     'svg_header': 'SVG Montage',
@@ -157,7 +160,7 @@ ERROR_MESSAGES = {
     'mri_load_error': 'Failed to load base MRI in Niivue viewer: {error}',
     'base_mri_not_found': 'Base MRI image not found or could not be loaded.',
     'svg_not_found': 'SVG montage not found or could not be loaded.',
-    'participant_list_load_error': 'Error loading participant list: {error}'
+    'participant_list_load_error': 'Error loading participant list: {error}',
 }
 
 # Success messages

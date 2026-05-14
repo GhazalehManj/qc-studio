@@ -111,6 +111,7 @@ qc-studio/
 │   ├── app.py
 │   ├── main.py
 │   ├── pages/
+│   ├── views/
 │   ├── components/
 │   ├── managers/
 │   ├── models/

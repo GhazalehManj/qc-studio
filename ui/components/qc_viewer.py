@@ -35,7 +35,8 @@ def display_qc_viewers(
 	session_id: str = None,
 	qc_pipeline: str = None,
 	qc_task: str = None,
-	total_participants: int = None
+	total_participants: int = None,
+	participant_ids: list | None = None,
 ) -> None:
 	"""Display QC viewers (Niivue, SVG, IQM panels) based on user selection.
 	
@@ -52,9 +53,8 @@ def display_qc_viewers(
 		qc_pipeline: QC pipeline name
 		qc_task: QC task name
 		total_participants: Total number of participants
+		participant_ids: Ordered cohort IDs for end-of-session navigation rules
 	"""
-	st.title("🧠 QC-Studio")
-	
 	# Autoplay: if the countdown timer has expired, advance page BEFORE rendering
 	# This ensures the NEW participant's qc_config is loaded on the next rerun
 	if SessionManager.is_autoplay_enabled():
@@ -76,7 +76,7 @@ def display_qc_viewers(
 					SessionManager.set_autoplay_enabled(False)
 					SessionManager.set_autoplay_start_time(0.0)
 				st.rerun()  # Rerun now loads new participant's qc_config
-	
+
 	# Get selected panels and normalize naming for backward compatibility
 	selected_panels = SessionManager.get_selected_panels()
 	selected_panels = {
@@ -92,7 +92,7 @@ def display_qc_viewers(
 	# Main layout: Rating column on left, viewer panels on right
 	rating_col, panels_col = st.columns([0.25, 0.75], gap="medium")
 	
-	# Left column: QC Rating form + Pagination (fixed, always visible)
+	# Left column: QC rating form + Pagination (fixed, always visible)
 	with rating_col:
 		_display_qc_rating_form(
 			participant_id=participant_id,
@@ -110,32 +110,27 @@ def display_qc_viewers(
 			participant_id=participant_id,
 			session_id=session_id,
 			qc_pipeline=qc_pipeline,
-			qc_task=qc_task
+			qc_task=qc_task,
+			participant_ids=participant_ids,
 		)
 	
 	# Right column: Viewer panels based on selection
 	with panels_col:
-		# All three panels selected
 		if show_niivue and show_svg and show_iqm:
 			_display_niivue_with_secondary_panel(dataset_dir, selected_panels, qc_config,
 			                                      participant_id, session_id)
 			st.divider()
 			_display_iqm_panel()
-		# Niivue + SVG (no IQM)
 		elif show_niivue and show_svg:
 			_display_niivue_with_secondary_panel(dataset_dir, selected_panels, qc_config,
 			                                      participant_id, session_id)
-		# Niivue + IQM (no SVG)
 		elif show_niivue and show_iqm:
 			_display_niivue_with_secondary_panel(dataset_dir, selected_panels, qc_config,
 			                                      participant_id, session_id)
-		# Full-width Niivue only
 		elif show_niivue:
 			_display_niivue_full_width(dataset_dir, qc_config, participant_id, session_id)
-		# Full-width SVG only
 		elif show_svg:
 			_display_svg_panel(dataset_dir, qc_config)
-		# Full-width IQM only
 		elif show_iqm:
 			_display_iqm_panel()
 	
@@ -345,7 +340,8 @@ def _display_pagination_in_sidebar(
 	participant_id: str,
 	session_id: str,
 	qc_pipeline: str,
-	qc_task: str
+	qc_task: str,
+	participant_ids: list | None = None,
 ) -> None:
 	"""Display pagination controls in the left sidebar with autoplay support.
 	
@@ -356,9 +352,11 @@ def _display_pagination_in_sidebar(
 		session_id: Current session ID
 		qc_pipeline: QC pipeline name
 		qc_task: QC task name
+		participant_ids: Cohort list for deciding when the session is fully QC'd
 	"""
 	st.markdown("#### 📄 Navigation")
 	st.write(f"**Participant {current_page} of {total_participants}**")
+	st.divider()
 	
 	# Autoplay controls (play/pause buttons)
 	autoplay_col1, autoplay_col2 = st.columns([1, 1])
@@ -389,12 +387,13 @@ def _display_pagination_in_sidebar(
 	
 	# Main pagination controls
 	pag_col1, pag_col2, pag_col3 = st.columns([1, 1, 1])
-	
+
 	with pag_col1:
-		if st.button(MESSAGES['previous_button'], width='stretch', key="pag_prev"):
-			SessionManager.previous_page()
-			st.rerun()
-	
+		if current_page > 1:
+			if st.button(MESSAGES['previous_button'], width='stretch', key="pag_prev"):
+				SessionManager.previous_page()
+				st.rerun()
+
 	with pag_col2:
 		if st.button(MESSAGES['confirm_next_button'], width='stretch', key="pag_confirm"):
 			rating = st.session_state.get(f'qc_rating_{SessionManager.get_rating_version()}', QC_RATINGS[0])
@@ -403,16 +402,20 @@ def _display_pagination_in_sidebar(
 				participant_id, session_id, qc_pipeline, qc_task, rating, notes
 			)
 			if SessionManager.is_autoplay_enabled():
-				# Start the countdown timer; autoplay logic advances the page when it expires
 				SessionManager.set_autoplay_start_time(time.time())
-			else:
+			elif current_page < total_participants:
 				SessionManager.next_page()
+			elif participant_ids and SessionManager.all_cohort_qc_complete(
+				qc_task, session_id, participant_ids
+			):
+				SessionManager.set_current_page(total_participants + 1)
 			st.rerun()
-	
+
 	with pag_col3:
-		if st.button(MESSAGES['next_button'], width='stretch', key="pag_next"):
-			SessionManager.next_page()
-			st.rerun()
+		if current_page < total_participants:
+			if st.button(MESSAGES['next_button'], width='stretch', key="pag_next"):
+				SessionManager.next_page()
+				st.rerun()
 	
 	st.divider()
 	
@@ -427,7 +430,8 @@ def _display_pagination_in_sidebar(
 			qc_task=qc_task,
 			rating=rating,
 			notes=notes,
-			total_participants=total_participants
+			total_participants=total_participants,
+			participant_ids=participant_ids,
 		)
 	
 	st.divider()
@@ -442,10 +446,18 @@ def _display_iqm_panel() -> None:
 	st.write("Add QC metrics here (e.g., SNR, motion). This is a placeholder area.")
 
 
-def _save_qc_record(participant_id: str, session_id: str, qc_pipeline: str, 
-					 qc_task: str, rating: str, notes: str, total_participants: int) -> None:
-	"""Save a QC record and mark as complete.
-	
+def _save_qc_record(
+	participant_id: str,
+	session_id: str,
+	qc_pipeline: str,
+	qc_task: str,
+	rating: str,
+	notes: str,
+	total_participants: int,
+	participant_ids: list | None = None,
+) -> None:
+	"""Save a QC record and optionally advance past the last participant when the cohort is complete.
+
 	Args:
 		participant_id: Participant ID
 		session_id: Session ID
@@ -454,9 +466,11 @@ def _save_qc_record(participant_id: str, session_id: str, qc_pipeline: str,
 		rating: QC rating value
 		notes: QC notes
 		total_participants: Total participants (used to detect end of QC)
+		participant_ids: Cohort list; if provided, only advance to congratulations when all are QC'd
 	"""
 	_record_qc_for_current_participant(participant_id, session_id, qc_pipeline, qc_task, rating, notes)
-	SessionManager.set_current_page(total_participants + 1)
+	if participant_ids and SessionManager.all_cohort_qc_complete(qc_task, session_id, participant_ids):
+		SessionManager.set_current_page(total_participants + 1)
 	st.rerun()
 
 

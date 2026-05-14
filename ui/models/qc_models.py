@@ -14,6 +14,8 @@ except ImportError:
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator
 
+from constants import MAX_MONTAGE_GRID_SIZE, MIN_MONTAGE_GRID_SIZE
+
 
 # Future plans:
 # To be used if we want to provide configurable QC scoring options
@@ -62,6 +64,26 @@ class QCTask(BaseModel):
     # Path for IQMs or other QC files (e.g. CSV, JSON)
     iqm_path: Annotated[Optional[Path], Field(description="Path to an IQM or other QC SVG/file")] = None
 
+    # Optional grid constraints for multi-image SVG/raster montage (see utils.data_loaders.load_svg_data)
+    montage_max_rows: Annotated[
+        Optional[int],
+        Field(
+            default=None,
+            ge=MIN_MONTAGE_GRID_SIZE,
+            le=MAX_MONTAGE_GRID_SIZE,
+            description="Default max rows for montage grid; omit for auto layout",
+        ),
+    ] = None
+    montage_max_cols: Annotated[
+        Optional[int],
+        Field(
+            default=None,
+            ge=MIN_MONTAGE_GRID_SIZE,
+            le=MAX_MONTAGE_GRID_SIZE,
+            description="Default max columns for montage grid; omit for auto layout",
+        ),
+    ] = None
+
     @field_validator("svg_montage_path", mode="before")
     @classmethod
     def _coerce_svg_montage_path(cls, v):
@@ -84,7 +106,9 @@ class QCConfig(RootModel[Dict[str, QCTask]]):
             "base_mri_image_path": "...",
             "overlay_mri_image_path": "...",
             "svg_montage_path": "...",
-            "iqm_path": "..."
+            "iqm_path": "...",
+            "montage_max_rows": 2,
+            "montage_max_cols": 2
         }
     }
     """

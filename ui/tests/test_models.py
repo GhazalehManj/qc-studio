@@ -159,6 +159,8 @@ class TestQCTask:
         assert task.overlay_mri_image_path is None
         assert task.svg_montage_path is None
         assert task.iqm_path is None
+        assert task.montage_max_rows is None
+        assert task.montage_max_cols is None
 
     def test_qc_task_path_conversion(self, temp_dir):
         """Test that string paths are converted to Path objects."""
@@ -177,6 +179,22 @@ class TestQCTask:
         serialized = task.model_dump()
         
         assert "base_mri_image_path" in serialized
+
+    def test_qc_task_montage_layout_fields(self, temp_dir):
+        task = QCTask(
+            svg_montage_path=str(temp_dir / "a.svg"),
+            montage_max_rows=2,
+            montage_max_cols=3,
+        )
+        assert task.montage_max_rows == 2
+        assert task.montage_max_cols == 3
+
+    def test_qc_task_montage_layout_invalid_rejected(self, temp_dir):
+        with pytest.raises(ValidationError):
+            QCTask(
+                svg_montage_path=str(temp_dir / "a.svg"),
+                montage_max_rows=99,
+            )
 
 
 class TestQCConfig:

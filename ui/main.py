@@ -1,14 +1,14 @@
 # %%
 import os
 from argparse import ArgumentParser
-from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from app import app
 from managers.session_manager import SessionManager
 from constants import SESSION_KEYS
+from views.sidebar_cohort_nav import render_sidebar_cohort_subjects
+
 
 def parse_args(args=None):
     parser = ArgumentParser("QC-Studio")
@@ -60,30 +60,60 @@ def parse_args(args=None):
     return parser.parse_args(args)
 
 
+def get_cli_run_context():
+    """Paths and counts from CLI args.
+
+    Used by ``main()`` and by multipage ``pages/*.py`` entrypoints so sidebar
+    navigation matches the same run configuration.
+    """
+    args = parse_args()
+    ui_dir = os.path.dirname(os.path.abspath(__file__))
+    qc_config_path = os.path.join(ui_dir, args.qc_json)
+    participants_df = pd.read_csv(args.participant_list, delimiter="\t")
+    stored_ids = SessionManager.get_participant_ids()
+    participant_ids = stored_ids if stored_ids else participants_df["participant_id"].tolist()
+    total_participants = len(participant_ids)
+    return {
+        "dataset_dir": args.dataset_dir,
+        "participant_list": args.participant_list,
+        "qc_pipeline": args.qc_pipeline,
+        "qc_task": args.qc_task,
+        "qc_config_path": qc_config_path,
+        "out_dir": args.out_dir,
+        "total_participants": total_participants,
+        "drop_duplicates": True,
+        "participant_ids": participant_ids,
+    }
+
+
 def main():
     """Main entry point for the Streamlit app."""
-    args = parse_args()
-    
-    dataset_dir = args.dataset_dir
-    participant_list = args.participant_list
-    session_list = args.session_list
-    qc_pipeline = args.qc_pipeline
-    qc_task = args.qc_task
-    qc_json = args.qc_json
-    out_dir = args.out_dir
-
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    qc_config_path = os.path.join(current_dir, qc_json)
+    ctx = get_cli_run_context()
+    dataset_dir = ctx["dataset_dir"]
+    participant_list = ctx["participant_list"]
+    qc_pipeline = ctx["qc_pipeline"]
+    qc_task = ctx["qc_task"]
+    qc_config_path = ctx["qc_config_path"]
+    out_dir = ctx["out_dir"]
+    total_participants = ctx["total_participants"]
+    drop_duplicates = ctx["drop_duplicates"]
 
     participants_df = pd.read_csv(participant_list, delimiter="\t")
-
-    # Use session-stored order (set after CSV upload) if available, else use file order
     stored_ids = SessionManager.get_participant_ids()
-    participant_ids = stored_ids if stored_ids else participants_df['participant_id'].tolist()
-    total_participants = len(participant_ids)
+    participant_ids = stored_ids if stored_ids else participants_df["participant_id"].tolist()
 
     # Initialize session state
     SessionManager.init_session_state()
+    SessionManager.compact_duplicate_qc_records_if_needed()
+
+    session_id = "ses-01"
+    render_sidebar_cohort_subjects(
+        participant_ids=participant_ids,
+        total_participants=total_participants,
+        qc_task=qc_task,
+        session_id=session_id,
+        entrypoint_rel_path=None,
+    )
 
     current_page = st.session_state.get(SESSION_KEYS['current_page'], 1)
     if current_page < 1:
@@ -98,10 +128,7 @@ def main():
         if participant_id and not participant_id.startswith("sub-"):
             participant_id = f"sub-{participant_id}"
 
-    session_id = "ses-01"
-
-    drop_duplicates = True
-    app( 
+    app(
         dataset_dir=dataset_dir,       
         participant_id=participant_id,
         session_id=session_id,
@@ -111,7 +138,8 @@ def main():
         out_dir=out_dir,
         total_participants=total_participants,
         drop_duplicates=drop_duplicates,
-        participant_list=participant_list
+        participant_list=participant_list,
+        participant_ids=participant_ids,
     )
 
 

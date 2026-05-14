@@ -4,12 +4,13 @@ import streamlit as st
 from constants import (
     EXPERIENCE_LEVELS, FATIGUE_LEVELS, PANEL_CONFIG, UPLOAD_FILE_TYPES,
     MESSAGES, ERROR_MESSAGES, SUCCESS_MESSAGES, INFO_MESSAGES, SVG_HEIGHT,
-    MIN_MONTAGE_GRID_SIZE, MAX_MONTAGE_GRID_SIZE, QC_DEDUP_KEYS
+    MIN_MONTAGE_GRID_SIZE, MAX_MONTAGE_GRID_SIZE, QC_DEDUP_KEYS, SESSION_KEYS,
 )
 from managers.session_manager import SessionManager
 from models import QCRecord
 from managers.panel_layout_manager import PanelLayoutManager
 from managers.niivue_viewer_manager import NiivueViewerManager
+from utils.config import parse_qc_config
 
 
 def _normalize_participant_id(pid: str) -> str:
@@ -18,7 +19,43 @@ def _normalize_participant_id(pid: str) -> str:
 	return pid_str[4:] if pid_str.startswith("sub-") else pid_str
 
 
-def show_landing_page(qc_pipeline, qc_task, out_dir, participant_list) -> None:
+def _maybe_apply_montage_defaults_from_qc_json(
+	qc_config_path: str,
+	qc_task: str,
+	first_participant_raw: str,
+) -> None:
+	"""Apply optional montage_max_rows / montage_max_cols from qc.json once per session.
+
+	Pipeline authors can recommend a default grid for multi-image montages per QC task.
+	Raters can still override via the landing-page montage form afterward.
+	"""
+	applied_key = SESSION_KEYS["montage_defaults_applied_qc_task"]
+	if st.session_state.get(applied_key) == qc_task:
+		return
+	pid = str(first_participant_raw).strip()
+	if not pid.startswith("sub-"):
+		pid = f"sub-{pid}"
+	cfg = parse_qc_config(
+		qc_config_path,
+		qc_task,
+		{"participant_id": pid, "session_id": "ses-01"},
+	)
+	if cfg.get("montage_max_rows") is not None:
+		SessionManager.set_montage_max_rows(cfg["montage_max_rows"])
+	if cfg.get("montage_max_cols") is not None:
+		SessionManager.set_montage_max_cols(cfg["montage_max_cols"])
+	st.session_state[applied_key] = qc_task
+
+
+def show_landing_page(
+	qc_pipeline,
+	qc_task,
+	out_dir,
+	participant_list,
+	qc_config_path: str,
+	*,
+	entrypoint_rel_path: str | None = None,
+) -> None:
 	"""Display the landing page with rater info, panel selection, and CSV upload.
 	
 	Args:
@@ -26,6 +63,10 @@ def show_landing_page(qc_pipeline, qc_task, out_dir, participant_list) -> None:
 		qc_task: QC task name
 		out_dir: Output directory path
 		participant_list: Path to participant list file
+		qc_config_path: Absolute or cwd-relative path to qc.json (for optional montage defaults)
+		entrypoint_rel_path: If set (for example ``"main.py"``), a successful Continue to QC
+			uses ``st.switch_page`` so the multipage sidebar hands off to the real app entrypoint.
+			Omit when the host is already ``main`` / ``app`` (normal ``st.rerun()``).
 	"""
 	st.title(MESSAGES['welcome_title'])
 
@@ -41,6 +82,9 @@ def show_landing_page(qc_pipeline, qc_task, out_dir, participant_list) -> None:
 		st.error(ERROR_MESSAGES['participant_list_load_error'].format(error=e))
 		return
 
+	if raw_ids:
+		_maybe_apply_montage_defaults_from_qc_json(qc_config_path, qc_task, raw_ids[0])
+
 	st.subheader(f"QC Pipeline: {qc_pipeline} | QC Task: {qc_task} | n_ds_participants: {total_participants_in_ds}")
 	
 	st.markdown("---")
@@ -50,7 +94,7 @@ def show_landing_page(qc_pipeline, qc_task, out_dir, participant_list) -> None:
 	
 	# Left column: Rater Information
 	with col1:
-		_display_rater_form()
+		_display_rater_form(entrypoint_rel_path=entrypoint_rel_path)
 	
 	# Middle column: Panel Selection and Montage Settings
 	with col2:
@@ -68,7 +112,7 @@ def show_landing_page(qc_pipeline, qc_task, out_dir, participant_list) -> None:
 	_display_panel_layout_preview(selected_panels)
 
 
-def _display_rater_form() -> None:
+def _display_rater_form(entrypoint_rel_path: str | None = None) -> None:
 	"""Render rater information form in the landing page."""
 	st.subheader(MESSAGES['rater_info_header'])
 	with st.form("rater_form"):
@@ -122,6 +166,8 @@ def _display_rater_form() -> None:
 				SessionManager.set_rater_fatigue(rater_fatigue)
 				SessionManager.set_autoplay_duration(autoplay_duration)
 				SessionManager.set_landing_page_complete(True)
+				if entrypoint_rel_path:
+					st.switch_page(entrypoint_rel_path)
 				st.rerun()
 
 
