@@ -15,10 +15,10 @@ ctx = get_cli_run_context()
 SessionManager.init_session_state()
 SessionManager.compact_duplicate_qc_records_if_needed()
 render_sidebar_cohort_subjects(
-	participant_ids=ctx.get("participant_ids") or [],
+	qc_cohort=ctx.get("qc_cohort"),
 	total_participants=ctx["total_participants"],
 	qc_task=ctx["qc_task"],
-	session_id="ses-01",
+	qc_tasks=ctx["qc_tasks"],
 	entrypoint_rel_path="main.py",
 )
 show_landing_page(

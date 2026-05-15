@@ -141,7 +141,7 @@ def load_svg_data(dataset_dir, path_dict: dict, max_montage_rows=None, max_monta
 		file_ext = full_path.suffix.lower()
 		
 		# Create unique identifier using last 3 path components to avoid collisions
-		# E.g., "screenshots/sub-ED01/sub-ED01.png" -> "screenshots_sub-ED01_sub"
+		# E.g., "screenshots/sub-CMH0001/sub-CMH0001.png" -> "screenshots_sub-CMH0001_sub"
 		path_parts = full_path.parts
 		if len(path_parts) >= 3:
 			# Use last 3 path components (grandparent dir + parent dir + stem)

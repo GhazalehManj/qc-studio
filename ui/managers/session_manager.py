@@ -316,12 +316,62 @@ class SessionManager:
         return True
 
     @staticmethod
+    def all_qc_cohort_pages_complete(qc_task: str, qc_cohort: list) -> bool:
+        """True when every (participant, session) page in ``qc_cohort`` has a decided ``final_qc``."""
+        return SessionManager.all_qc_cohort_pages_complete_for_tasks([qc_task], qc_cohort)
+
+    @staticmethod
+    def all_qc_cohort_pages_complete_for_tasks(qc_tasks: list, qc_cohort: list) -> bool:
+        """True when every cohort page has a decided rating for **each** task in ``qc_tasks``."""
+        if not qc_cohort or not qc_tasks:
+            return False
+        for entry in qc_cohort:
+            pid = entry.get("participant_id") if isinstance(entry, dict) else entry[0]
+            sid = entry.get("session_id") if isinstance(entry, dict) else entry[1]
+            for t in qc_tasks:
+                if not SessionManager.participant_has_decided_qc(pid, sid, t):
+                    return False
+        return True
+
+    @staticmethod
     def first_page_missing_qc(qc_task: str, session_id: str, participant_ids: list) -> int:
         """1-based page index of the first participant without a decided ``final_qc``."""
         for i, pid in enumerate(participant_ids):
             if not SessionManager.participant_has_decided_qc(pid, session_id, qc_task):
                 return i + 1
         return 1
+
+    @staticmethod
+    def first_qc_cohort_page_missing(qc_task: str, qc_cohort: list) -> int:
+        """1-based page index of the first (participant, session) cohort row missing a decided ``final_qc``."""
+        return SessionManager.first_qc_cohort_page_missing_for_tasks([qc_task], qc_cohort)
+
+    @staticmethod
+    def first_qc_cohort_page_missing_for_tasks(qc_tasks: list, qc_cohort: list) -> int:
+        """First page index where any task in ``qc_tasks`` lacks a decided ``final_qc``."""
+        for i, entry in enumerate(qc_cohort or []):
+            pid = entry.get("participant_id") if isinstance(entry, dict) else entry[0]
+            sid = entry.get("session_id") if isinstance(entry, dict) else entry[1]
+            for t in qc_tasks:
+                if not SessionManager.participant_has_decided_qc(pid, sid, t):
+                    return i + 1
+        return 1
+
+    @staticmethod
+    def get_latest_qc_records_for_task_set(qc_tasks: list | None) -> list:
+        """Like ``get_latest_qc_records_per_dedup`` but only records whose ``qc_task`` is in ``qc_tasks``."""
+        if not qc_tasks:
+            return SessionManager.get_latest_qc_records_per_dedup(None)
+        allowed = {str(t) for t in qc_tasks}
+        seen = {}
+        for record in reversed(SessionManager.get_qc_records()):
+            t = record.qc_task if hasattr(record, "qc_task") else record.get("qc_task", "")
+            if str(t) not in allowed:
+                continue
+            key = SessionManager._qc_record_dedup_tuple(record)
+            if key not in seen:
+                seen[key] = record
+        return list(seen.values())
 
     @staticmethod
     def reset_for_new_participant():

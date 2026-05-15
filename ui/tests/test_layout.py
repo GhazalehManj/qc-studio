@@ -104,7 +104,7 @@ class TestShowLandingPage:
         from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
-            'participant_id': ['sub-ED01', 'sub-ED02', 'sub-ED03']
+            'participant_id': ['sub-CMH0001', 'sub-CMH0002', 'sub-CMH0003']
         })
         mock_read_csv.return_value = mock_df
 
@@ -126,7 +126,7 @@ class TestShowLandingPage:
         from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
-            'participant_id': ['sub-ED01', 'sub-ED02']
+            'participant_id': ['sub-CMH0001', 'sub-CMH0002']
         })
         mock_read_csv.return_value = mock_df
 
@@ -169,7 +169,7 @@ class TestShowLandingPage:
         from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
-            'participant_id': ['sub-ED01']
+            'participant_id': ['sub-CMH0001']
         })
         mock_read_csv.return_value = mock_df
 
@@ -190,7 +190,7 @@ class TestShowLandingPage:
         """qc.json montage_max_rows/cols seed session once for the QC task."""
         from views.landing_page import show_landing_page
 
-        mock_df = pd.DataFrame({'participant_id': ['sub-ED01']})
+        mock_df = pd.DataFrame({'participant_id': ['sub-CMH0001']})
         mock_read_csv.return_value = mock_df
         qc_path = _stub_qc_config_path(tmp_path, montage_rows_cols=(2, 3))
 
@@ -218,7 +218,7 @@ class TestLandingPageRaterInfo:
         from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
-            'participant_id': ['sub-ED01']
+            'participant_id': ['sub-CMH0001']
         })
         mock_read_csv.return_value = mock_df
 
@@ -240,7 +240,7 @@ class TestLandingPageRaterInfo:
         from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
-            'participant_id': ['sub-ED01']
+            'participant_id': ['sub-CMH0001']
         })
         mock_read_csv.return_value = mock_df
 
@@ -268,7 +268,7 @@ class TestLandingPagePanelSelection:
         from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
-            'participant_id': ['sub-ED01']
+            'participant_id': ['sub-CMH0001']
         })
         mock_read_csv.return_value = mock_df
 
@@ -308,7 +308,7 @@ class TestLandingPageCsvUpload:
         from views.landing_page import show_landing_page
 
         mock_df = pd.DataFrame({
-            'participant_id': ['sub-ED01']
+            'participant_id': ['sub-CMH0001']
         })
         mock_read_csv.return_value = mock_df
 
@@ -348,7 +348,7 @@ class TestApp:
 
         app(
             dataset_dir='/data',
-            participant_id='sub-ED01',
+            participant_id='sub-CMH0001',
             session_id='ses-01',
             qc_pipeline='fmriprep',
             qc_task='anat_wf_qc',
@@ -423,8 +423,7 @@ class TestNavigationControls:
     """Test navigation controls."""
 
     @patch('app.st')
-    @patch('app.parse_qc_config')
-    def test_previous_button_updates_page(self, mock_parse_config, mock_st):
+    def test_previous_button_updates_page(self, mock_st):
         """Test that previous button updates current page."""
         from app import app
         

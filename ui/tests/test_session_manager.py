@@ -343,20 +343,20 @@ class TestTaskAwareRecordLookup:
         SessionManager.init_session_state()
 
         rec_task_a = {
-            'participant_id': 'sub-ED01',
+            'participant_id': 'sub-CMH0001',
             'session_id': 'ses-01',
             'qc_task': 'anat_wf_qc',
             'final_qc': 'PASS',
         }
         rec_task_b = {
-            'participant_id': 'sub-ED01',
+            'participant_id': 'sub-CMH0001',
             'session_id': 'ses-01',
             'qc_task': 'func_wf_qc',
             'final_qc': 'FAIL',
         }
         SessionManager.set_qc_records([rec_task_a, rec_task_b])
 
-        record = SessionManager.get_qc_record_for_participant('sub-ED01', 'ses-01', 'anat_wf_qc')
+        record = SessionManager.get_qc_record_for_participant('sub-CMH0001', 'ses-01', 'anat_wf_qc')
         assert record is not None
         assert record.get('qc_task') == 'anat_wf_qc'
         assert record.get('final_qc') == 'PASS'
@@ -366,10 +366,10 @@ class TestTaskAwareRecordLookup:
         st.session_state = mock_session_state.data
         SessionManager.init_session_state()
 
-        older_record = {'participant_id': 'sub-ED02', 'session_id': 'ses-01', 'qc_task': 'anat_wf_qc'}
-        newer_record = {'participant_id': 'sub-ED02', 'session_id': 'ses-01', 'qc_task': 'func_wf_qc'}
+        older_record = {'participant_id': 'sub-CMH0002', 'session_id': 'ses-01', 'qc_task': 'anat_wf_qc'}
+        newer_record = {'participant_id': 'sub-CMH0002', 'session_id': 'ses-01', 'qc_task': 'func_wf_qc'}
         SessionManager.set_qc_records([older_record, newer_record])
 
-        record = SessionManager.get_qc_record_for_participant('sub-ED02', 'ses-01')
+        record = SessionManager.get_qc_record_for_participant('sub-CMH0002', 'ses-01')
         assert record is not None
         assert record.get('qc_task') == 'func_wf_qc'

@@ -1,7 +1,22 @@
 """QC configuration parsing utilities."""
+import json
 from pathlib import Path
 from models import QCConfig
 from constants import SUBSTITUTIONS_DICT
+
+
+def list_qc_tasks_from_json(qc_json) -> list[str]:
+	"""Return top-level QC task keys from a ``qc.json`` file (JSON object keys, file order)."""
+	qc_json_path = Path(qc_json) if qc_json else None
+	if not qc_json_path or not qc_json_path.is_file():
+		return []
+	try:
+		data = json.loads(qc_json_path.read_text(encoding="utf-8"))
+	except (OSError, json.JSONDecodeError):
+		return []
+	if not isinstance(data, dict):
+		return []
+	return list(data.keys())
 
 
 def parse_qc_config(qc_json, qc_task, substitution_values=None) -> dict:

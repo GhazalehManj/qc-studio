@@ -387,7 +387,8 @@ class TestSaveQcResultsToCsv:
         assert output_file.exists()
         df = pd.read_csv(output_file, sep="\t")
         assert len(df) == 1
-        assert df.iloc[0]['participant_id'] == 'sub-ED01'
+        assert list(df.columns)[0] == "pipeline"
+        assert df.iloc[0]['participant_id'] == 'sub-CMH0001'
 
     def test_save_empty_records_list(self, temp_dir):
         """Test saving empty records list."""
@@ -420,3 +421,28 @@ class TestSaveQcResultsToCsv:
         
         # At least verify it doesn't crash
         assert result is not None or nested_output_file.parent.exists()
+
+    def test_save_qc_records_sorted_by_participant_session_task(self, temp_dir, qc_record_sample):
+        """TSV rows follow participant_id, then session_id, then qc_task (cohort walk order)."""
+        b = qc_record_sample.model_copy(update={"qc_task": "b_task"})
+        a2 = qc_record_sample.model_copy(
+            update={"session_id": "ses-02", "qc_task": "a_task"}
+        )
+        other = qc_record_sample.model_copy(
+            update={"participant_id": "sub-CMH0002", "qc_task": "z_task"}
+        )
+        # Intentionally shuffled input order
+        records = [other, a2, qc_record_sample, b]
+
+        output_file = temp_dir / "sorted.tsv"
+        save_qc_results_to_csv(output_file, records, drop_duplicates=False)
+        df = pd.read_csv(output_file, sep="\t")
+
+        assert list(df["participant_id"]) == [
+            "sub-CMH0001",
+            "sub-CMH0001",
+            "sub-CMH0001",
+            "sub-CMH0002",
+        ]
+        assert list(df["session_id"]) == ["ses-01", "ses-01", "ses-02", "ses-01"]
+        assert list(df["qc_task"]) == ["anat_wf_qc", "b_task", "a_task", "z_task"]

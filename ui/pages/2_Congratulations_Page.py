@@ -15,17 +15,18 @@ ctx = get_cli_run_context()
 SessionManager.init_session_state()
 SessionManager.compact_duplicate_qc_records_if_needed()
 render_sidebar_cohort_subjects(
-	participant_ids=ctx.get("participant_ids") or [],
+	qc_cohort=ctx.get("qc_cohort"),
 	total_participants=ctx["total_participants"],
 	qc_task=ctx["qc_task"],
-	session_id="ses-01",
+	qc_tasks=ctx["qc_tasks"],
 	entrypoint_rel_path="main.py",
 )
-session_id = "ses-01"
-pids = ctx.get("participant_ids") or []
-cohort_complete = (not pids) or SessionManager.all_cohort_qc_complete(
-	ctx["qc_task"], session_id, pids
+qc_cohort = ctx.get("qc_cohort") or []
+cohort_complete = (not qc_cohort) or SessionManager.all_qc_cohort_pages_complete_for_tasks(
+	ctx["qc_tasks"], qc_cohort
 )
+pids = ctx.get("participant_ids") or []
+session_id = qc_cohort[0]["session_id"] if qc_cohort else "ses-01"
 show_congratulations_page(
 	ctx["qc_task"],
 	ctx["out_dir"],
@@ -34,5 +35,7 @@ show_congratulations_page(
 	cohort_complete=cohort_complete,
 	participant_ids=pids or None,
 	session_id=session_id,
+	qc_cohort=qc_cohort or None,
+	qc_tasks=ctx["qc_tasks"],
 	entrypoint_rel_path="main.py",
 )

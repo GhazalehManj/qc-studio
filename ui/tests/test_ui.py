@@ -135,7 +135,7 @@ class TestUiConfiguration:
         
         assert len(df) == 3
         assert 'participant_id' in df.columns
-        assert 'sub-ED01' in df['participant_id'].values
+        assert 'sub-CMH0001' in df['participant_id'].values
 
     def test_total_participants_calculation(self, sample_participant_list):
         """Test calculation of total participants."""
@@ -149,9 +149,9 @@ class TestUiConfiguration:
         df = pd.read_csv(sample_participant_list, delimiter="\t")
         participant_ids = df['participant_id'].tolist()
         
-        assert participant_ids[0] == 'sub-ED01'
-        assert participant_ids[1] == 'sub-ED02'
-        assert participant_ids[2] == 'sub-ED03'
+        assert participant_ids[0] == 'sub-CMH0001'
+        assert participant_ids[1] == 'sub-CMH0002'
+        assert participant_ids[2] == 'sub-CMH0003'
 
 
 class TestPageNavigation:
@@ -173,7 +173,7 @@ class TestPageNavigation:
         if current_page > total_participants:
             participant_id = None
         else:
-            participant_id = f"sub-ED{current_page:02d}"
+            participant_id = f"sub-CMH{current_page:04d}"
         
         assert participant_id is None
 

@@ -1,10 +1,12 @@
 # %%
 import os
+import sys
 from argparse import ArgumentParser
 
 import pandas as pd
 import streamlit as st
-from app import app
+from app import app, resolve_qc_tasks
+from components.qc_viewer import AUTOPLAY_RUN_CTX_KEY
 from managers.session_manager import SessionManager
 from constants import SESSION_KEYS
 from views.sidebar_cohort_nav import render_sidebar_cohort_subjects
@@ -28,7 +30,12 @@ def parse_args(args=None):
     parser.add_argument(
         "--session_list",
         dest="session_list",
-        help=("List of sessions to QC"),
+        help=(
+            "Comma-separated BIDS session labels to QC (e.g. ses-01,ses-02). "
+            "Each participant is combined with each session into one review page. "
+            "If the participant TSV has a session_id column, that table defines "
+            "(participant, session) rows instead. Legacy default Baseline maps to ses-01."
+        ),
         default="Baseline",
         required=False,
     )
@@ -40,7 +47,10 @@ def parse_args(args=None):
     )
     parser.add_argument(
         "--qc_task",
-        help=("Specific workflow output to QC"),
+        help=(
+            "QC task key from qc.json (e.g. anat_wf_qc), or **all** to show every task "
+            "on one scrollable page with a rating per task."
+        ),
         dest="qc_task",
         required=True,
     )
@@ -60,6 +70,58 @@ def parse_args(args=None):
     return parser.parse_args(args)
 
 
+def _normalize_participant_id(pid: str) -> str:
+    p = str(pid).strip()
+    return p if p.startswith("sub-") else f"sub-{p}"
+
+
+def _normalize_session_id(sid: str) -> str:
+    s = str(sid).strip()
+    if not s:
+        return "ses-01"
+    if s.lower() == "baseline":
+        return "ses-01"
+    if s.startswith("ses-"):
+        return s
+    if s.isdigit():
+        return f"ses-{int(s):02d}"
+    return s if s.startswith("ses-") else f"ses-{s}"
+
+
+def _parse_session_list(raw: str | None) -> list[str]:
+    """Return ordered unique BIDS session ids from CLI ``--session_list``."""
+    if raw is None or str(raw).strip() == "":
+        return ["ses-01"]
+    s = str(raw).strip()
+    if s.lower() == "baseline":
+        return ["ses-01"]
+    parts = [p.strip() for p in s.split(",") if p.strip()]
+    if not parts:
+        return ["ses-01"]
+    seen = []
+    for p in parts:
+        norm = _normalize_session_id(p)
+        if norm not in seen:
+            seen.append(norm)
+    return seen or ["ses-01"]
+
+
+def _build_qc_cohort(participants_df: pd.DataFrame, session_ids: list[str]) -> list[dict]:
+    """Each dict is one pagination page: participant_id + session_id."""
+    rows: list[dict] = []
+    if "session_id" in participants_df.columns:
+        for _, r in participants_df.iterrows():
+            pid = _normalize_participant_id(r["participant_id"])
+            sid = _normalize_session_id(r["session_id"])
+            rows.append({"participant_id": pid, "session_id": sid})
+        return rows
+    for pid_raw in participants_df["participant_id"].tolist():
+        pid = _normalize_participant_id(pid_raw)
+        for sid in session_ids:
+            rows.append({"participant_id": pid, "session_id": sid})
+    return rows
+
+
 def get_cli_run_context():
     """Paths and counts from CLI args.
 
@@ -69,20 +131,44 @@ def get_cli_run_context():
     args = parse_args()
     ui_dir = os.path.dirname(os.path.abspath(__file__))
     qc_config_path = os.path.join(ui_dir, args.qc_json)
+    session_ids = _parse_session_list(args.session_list)
     participants_df = pd.read_csv(args.participant_list, delimiter="\t")
     stored_ids = SessionManager.get_participant_ids()
-    participant_ids = stored_ids if stored_ids else participants_df["participant_id"].tolist()
-    total_participants = len(participant_ids)
+    if stored_ids:
+        cohort_df = pd.DataFrame({"participant_id": stored_ids})
+        qc_cohort = _build_qc_cohort(cohort_df, session_ids)
+    else:
+        qc_cohort = _build_qc_cohort(participants_df, session_ids)
+    total_participants = len(qc_cohort)
+    participant_ids = []
+    seen = set()
+    for e in qc_cohort:
+        pid = e["participant_id"]
+        if pid not in seen:
+            seen.add(pid)
+            participant_ids.append(pid)
+    qc_tasks = resolve_qc_tasks(args.qc_task, qc_config_path)
+    if str(args.qc_task).strip().lower() == "all" and not qc_tasks:
+        print(
+            "QC-Studio: --qc_task all requires a readable qc.json (JSON object with task keys). "
+            f"No tasks found at {qc_config_path!r}.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
     return {
         "dataset_dir": args.dataset_dir,
         "participant_list": args.participant_list,
+        "session_list": args.session_list,
+        "session_ids": session_ids,
         "qc_pipeline": args.qc_pipeline,
         "qc_task": args.qc_task,
+        "qc_tasks": qc_tasks,
         "qc_config_path": qc_config_path,
         "out_dir": args.out_dir,
         "total_participants": total_participants,
         "drop_duplicates": True,
         "participant_ids": participant_ids,
+        "qc_cohort": qc_cohort,
     }
 
 
@@ -97,39 +183,76 @@ def main():
     out_dir = ctx["out_dir"]
     total_participants = ctx["total_participants"]
     drop_duplicates = ctx["drop_duplicates"]
-
-    participants_df = pd.read_csv(participant_list, delimiter="\t")
-    stored_ids = SessionManager.get_participant_ids()
-    participant_ids = stored_ids if stored_ids else participants_df["participant_id"].tolist()
+    qc_cohort = ctx["qc_cohort"]
+    participant_ids = ctx["participant_ids"]
 
     # Initialize session state
     SessionManager.init_session_state()
     SessionManager.compact_duplicate_qc_records_if_needed()
 
-    session_id = "ses-01"
-    render_sidebar_cohort_subjects(
-        participant_ids=participant_ids,
-        total_participants=total_participants,
-        qc_task=qc_task,
-        session_id=session_id,
-        entrypoint_rel_path=None,
-    )
+    session_id_for_sidebar = qc_cohort[0]["session_id"] if qc_cohort else "ses-01"
+    qc_tasks = ctx["qc_tasks"]
 
     current_page = st.session_state.get(SESSION_KEYS['current_page'], 1)
     if current_page < 1:
         st.session_state[SESSION_KEYS['current_page']] = 1
         current_page = 1
 
-    if current_page > total_participants:
+    if current_page > total_participants or not qc_cohort:
         participant_id = None
+        session_id = session_id_for_sidebar
     else:
-        participant_id = participant_ids[current_page - 1]
-        # Ensure participant_id has "sub-" prefix
-        if participant_id and not participant_id.startswith("sub-"):
-            participant_id = f"sub-{participant_id}"
+        entry = qc_cohort[current_page - 1]
+        participant_id = entry["participant_id"]
+        session_id = entry["session_id"]
+
+    if (
+        participant_id is not None
+        and qc_cohort
+        and current_page <= total_participants
+    ):
+        st.session_state[AUTOPLAY_RUN_CTX_KEY] = {
+            "participant_id": participant_id,
+            "session_id": session_id,
+            "qc_pipeline": qc_pipeline,
+            "qc_task": qc_task,
+            "qc_tasks": qc_tasks,
+            "total_participants": total_participants,
+            "qc_cohort": qc_cohort,
+            "participant_ids": participant_ids,
+        }
+    else:
+        st.session_state.pop(AUTOPLAY_RUN_CTX_KEY, None)
+
+    # Sidebar must be drawn before main content so Navigation + Subjects both appear.
+    on_qc_viewer_page = bool(
+        participant_id is not None
+        and qc_cohort
+        and current_page <= total_participants
+    )
+    render_sidebar_cohort_subjects(
+        qc_cohort=qc_cohort,
+        total_participants=total_participants,
+        qc_task=qc_task,
+        qc_tasks=qc_tasks,
+        entrypoint_rel_path=None,
+        prepend_navigation=on_qc_viewer_page,
+        navigation_kwargs={
+            "current_page": SessionManager.get_current_page(),
+            "total_participants": total_participants,
+            "participant_id": participant_id,
+            "session_id": session_id,
+            "qc_pipeline": qc_pipeline,
+            "qc_tasks": qc_tasks,
+            "participant_ids": participant_ids,
+            "qc_cohort": qc_cohort,
+        }
+        if on_qc_viewer_page
+        else None,
+    )
 
     app(
-        dataset_dir=dataset_dir,       
+        dataset_dir=dataset_dir,
         participant_id=participant_id,
         session_id=session_id,
         qc_pipeline=qc_pipeline,
@@ -140,12 +263,13 @@ def main():
         drop_duplicates=drop_duplicates,
         participant_list=participant_list,
         participant_ids=participant_ids,
+        qc_cohort=qc_cohort,
+        qc_tasks=qc_tasks,
     )
 
 
 if __name__ == "__main__":
     main()
-
 
 
 

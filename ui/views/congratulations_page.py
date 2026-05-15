@@ -15,6 +15,8 @@ def show_congratulations_page(
 	cohort_complete: bool = True,
 	participant_ids: list | None = None,
 	session_id: str | None = None,
+	qc_cohort: list | None = None,
+	qc_tasks: list | None = None,
 	entrypoint_rel_path: str | None = None,
 ) -> None:
 	"""Display congratulations (full summary) or a minimal placeholder until all subjects are QC'd.
@@ -25,18 +27,44 @@ def show_congratulations_page(
 		total_participants: Total number of participants in the QC session
 		drop_duplicates: Whether to drop duplicate records before saving
 		cohort_complete: When False, show a minimal page (not all subjects have a decided rating).
-		participant_ids: Cohort order (for Continue QC navigation).
-		session_id: BIDS session id (e.g. ses-01) for completion checks.
+		participant_ids: Cohort order (for Continue QC navigation when using legacy single-session mode).
+		session_id: BIDS session id for legacy single-session completion checks.
+		qc_tasks: Task keys for this run (defaults to ``[qc_task]``).
 		entrypoint_rel_path: If set (e.g. ``"main.py"``), sidebar navigation uses ``st.switch_page``.
 	"""
+	tasks_eff = list(qc_tasks) if qc_tasks else [qc_task]
+
+	def _fully_reviewed_cohort_pages(records: list) -> int:
+		required = {str(t) for t in tasks_eff}
+		by_page: dict[tuple[str, str], set[str]] = {}
+		for r in records:
+			if not SessionManager._final_qc_is_decided(r):
+				continue
+			pid = r.participant_id if hasattr(r, "participant_id") else r.get("participant_id", "")
+			sid = r.session_id if hasattr(r, "session_id") else r.get("session_id", "")
+			tk = r.qc_task if hasattr(r, "qc_task") else r.get("qc_task", "")
+			k = (str(pid), str(sid))
+			by_page.setdefault(k, set()).add(str(tk))
+		return sum(1 for ts in by_page.values() if required <= ts)
+
 	if not cohort_complete:
 		st.subheader("QC not finished yet")
 		st.info(
-			"Not every participant has a PASS / FAIL / UNCERTAIN rating yet. "
+			"Not every review page has a PASS / FAIL / UNCERTAIN rating yet. "
 			"When you are ready, use **Continue QC** to return to the review."
 		)
-		if participant_ids and session_id and st.button("Continue QC", key="congrats_continue_qc_incomplete"):
-			miss = SessionManager.first_page_missing_qc(qc_task, session_id, participant_ids)
+		can_continue = bool(qc_cohort) or (bool(participant_ids) and bool(session_id))
+		if can_continue and st.button("Continue QC", key="congrats_continue_qc_incomplete"):
+			if qc_cohort:
+				miss = SessionManager.first_qc_cohort_page_missing_for_tasks(tasks_eff, qc_cohort)
+			else:
+				temp_cohort = []
+				for pid in participant_ids or []:
+					p = str(pid).strip()
+					if not p.startswith("sub-"):
+						p = f"sub-{p}"
+					temp_cohort.append({"participant_id": p, "session_id": session_id})
+				miss = SessionManager.first_qc_cohort_page_missing_for_tasks(tasks_eff, temp_cohort)
 			st.session_state[SESSION_KEYS["current_page"]] = miss
 			if entrypoint_rel_path:
 				st.switch_page(entrypoint_rel_path)
@@ -45,11 +73,16 @@ def show_congratulations_page(
 
 	st.title(MESSAGES["congratulations_title"])
 
-	record_list = SessionManager.get_latest_qc_records_per_dedup(qc_task)
-	num_reviewed = len([r for r in record_list if SessionManager._final_qc_is_decided(r)])
+	record_list = SessionManager.get_latest_qc_records_for_task_set(tasks_eff)
+	num_pages_done = _fully_reviewed_cohort_pages(record_list)
+	num_decided_rows = len([r for r in record_list if SessionManager._final_qc_is_decided(r)])
+	if len(tasks_eff) > 1:
+		headline = f"## {num_pages_done} review page(s) fully completed (all {len(tasks_eff)} tasks rated)"
+	else:
+		headline = f"## {num_decided_rows} participant(s) have been reviewed!"
 
 	st.markdown(f"""
-	## {num_reviewed} participant(s) have been reviewed!
+	{headline}
 
 	Thank you for completing the quality control process. Your thorough review ensures the integrity of our data!
 
@@ -59,7 +92,11 @@ def show_congratulations_page(
 
 	rater_id = SessionManager.get_rater_id()
 	# Display session information and results summary
-	_display_session_summary(rater_id, qc_task, record_list, reviewed_count=num_reviewed)
+	task_label = ", ".join(tasks_eff) if len(tasks_eff) > 1 else tasks_eff[0]
+	summary_count = num_pages_done if len(tasks_eff) > 1 else num_decided_rows
+	_display_session_summary(
+		rater_id, task_label, record_list, reviewed_count=summary_count, multi_task=len(tasks_eff) > 1
+	)
 
 	# Action buttons
 	col1, col2, col3 = st.columns([1, 1, 1])
@@ -82,7 +119,12 @@ def show_congratulations_page(
 
 
 def _display_session_summary(
-	rater_id: str, qc_task: str, record_list: list, *, reviewed_count: int | None = None
+	rater_id: str,
+	qc_task: str,
+	record_list: list,
+	*,
+	reviewed_count: int | None = None,
+	multi_task: bool = False,
 ) -> None:
 	"""Display summary of the QC session.
 
@@ -91,6 +133,7 @@ def _display_session_summary(
 		qc_task: QC task name
 		record_list: QC records for this task (deduplicated)
 		reviewed_count: Participants with a decided rating; defaults to len(record_list)
+		multi_task: When True, ``reviewed_count`` counts cohort pages with every task rated.
 	"""
 	col1, col2 = st.columns([1, 1])
 	with col1:
@@ -98,7 +141,10 @@ def _display_session_summary(
 		st.write(f"**Rater ID:** {rater_id}")
 		st.write(f"**QC Task:** {qc_task}")
 		n_rev = reviewed_count if reviewed_count is not None else len(record_list)
-		st.write(f"**Total Participants Reviewed:** {n_rev}")
+		if multi_task:
+			st.write(f"**Fully completed review pages:** {n_rev}")
+		else:
+			st.write(f"**Total Participants Reviewed:** {n_rev}")
 
 	with col2:
 		st.subheader("QC Results Summary")

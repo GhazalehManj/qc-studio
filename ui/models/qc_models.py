@@ -120,7 +120,7 @@ QCDecision = Literal["pass", "fail", "uncertain"]
 
 
 class QCStatusRow(BaseModel):
-    participant_id: Annotated[str, Field(description="BIDS subject ID, e.g., sub-ED01")]
+    participant_id: Annotated[str, Field(description="BIDS subject ID, e.g., sub-CMH0001")]
     session: Optional[str] = None
     acq: Optional[str] = None
     run: Optional[int] = None
