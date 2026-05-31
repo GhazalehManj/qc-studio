@@ -18,10 +18,10 @@
         "svg_montage_path": "derivatives/qsiprep/[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_acq-multishelldir92_run-1_final_denoise_wf_biascorr.svg"
     },
     "dwi_denoising_qc": {
-        "svg_montage_path": "derivatives/qsiprep/[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_acq-multishelldir92_run-1_dwi_denoise_ses_01_acq_multishelldir92_run_1_dwi_wf_denoising.svg"
+        "svg_montage_path": "derivatives/qsiprep/[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_acq-multishelldir92_run-1_dwi_denoise_[[NIPOPPY_QSIPREP_SESSION_SLUG]]_acq_multishelldir92_run_1_dwi_wf_denoising.svg"
     },
     "dwi_unringing_qc": {
-        "svg_montage_path": "derivatives/qsiprep/[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_acq-multishelldir92_run-1_dwi_denoise_ses_01_acq_multishelldir92_run_1_dwi_wf_unringing.svg"
+        "svg_montage_path": "derivatives/qsiprep/[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_acq-multishelldir92_run-1_dwi_denoise_[[NIPOPPY_QSIPREP_SESSION_SLUG]]_acq_multishelldir92_run_1_dwi_wf_unringing.svg"
     },
     "dwi_b0ref_qc": {
         "svg_montage_path": "derivatives/qsiprep/[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_acq-multishelldir92_run-1_desc-resampled_b0ref.svg"

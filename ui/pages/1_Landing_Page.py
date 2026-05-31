@@ -27,5 +27,7 @@ show_landing_page(
 	ctx["out_dir"],
 	ctx["participant_list"],
 	ctx["qc_config_path"],
+	qc_cohort=ctx.get("qc_cohort"),
+	session_ids=ctx.get("session_ids"),
 	entrypoint_rel_path="main.py",
 )

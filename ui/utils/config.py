@@ -19,6 +19,16 @@ def list_qc_tasks_from_json(qc_json) -> list[str]:
 	return list(data.keys())
 
 
+def build_substitution_values(participant_id: str, session_id: str) -> dict:
+	"""Template values for ``qc.json`` path placeholders."""
+	sid = str(session_id or "ses-01").strip()
+	return {
+		"participant_id": participant_id,
+		"session_id": sid,
+		"session_slug": sid.replace("-", "_"),
+	}
+
+
 def parse_qc_config(qc_json, qc_task, substitution_values=None) -> dict:
 	"""Parse a QC JSON file using the QCConfig Pydantic model.
 

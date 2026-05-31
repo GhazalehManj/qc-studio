@@ -28,6 +28,6 @@ Examples:
 
 - From `ui/` with **`qsiprep_test.sh`**: `./qsiprep_test.sh ../pipelines/qsiprep/qc.json sdc_wf_qc`, or `./qsiprep_test.sh ../pipelines/qsiprep/qc.json all`, or set **`QC_TASK=all ./qsiprep_test.sh`**.
 
-Paths inside `qc.json` are relative to **`--dataset_dir`**. Use **`[[NIPOPPY_BIDS_PARTICIPANT_ID]]`** and **`[[NIPOPPY_BIDS_SESSION_ID]]`** where filenames include those entities.
+Paths inside `qc.json` are relative to **`--dataset_dir`**. Use **`[[NIPOPPY_BIDS_PARTICIPANT_ID]]`** and **`[[NIPOPPY_BIDS_SESSION_ID]]`** where filenames include those entities. For QSIPrep’s internal workflow slug (`dwi_denoise_ses_01_…`), use **`[[NIPOPPY_QSIPREP_SESSION_SLUG]]`** (underscore form, e.g. `ses_02` for BIDS `ses-02`).
 
-Sample derivatives mirror a typical QSIPrep export: **`sample_data/derivatives/qsiprep/<subject>/figures/`** (no tool-version directory in this bundle). The shipped `qc.json` targets **`acq-multishelldir92`** and **`run-1`**. The **`dwi_denoising_qc`** and **`dwi_unringing_qc`** entries embed a literal **`ses_01`** / **`ses_02`** slug inside the filename (QSIPrep’s internal naming); ensure filenames on disk match the expanded paths for each session you QC.
+Sample derivatives mirror a typical QSIPrep export: **`sample_data/derivatives/qsiprep/<subject>/figures/`** (no tool-version directory in this bundle). The shipped `qc.json` targets **`acq-multishelldir92`** and **`run-1`**.

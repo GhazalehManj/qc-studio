@@ -27,7 +27,19 @@ if [[ "${qc_task}" != "all" && "${qc_task}" != "ALL" ]]; then
 	echo "Tip: for every task in qc.json on one page, run:  QC_TASK=all $0  or  $0 \"${qc_json}\" all"
 fi
 
-streamlit run "$qc_launch_script" --server.port="$port_number" -- \
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_STREAMLIT="${SCRIPT_DIR}/../.venv/bin/streamlit"
+if [[ -x "${VENV_STREAMLIT}" ]]; then
+	STREAMLIT_CMD="${VENV_STREAMLIT}"
+elif command -v streamlit >/dev/null 2>&1; then
+	STREAMLIT_CMD="streamlit"
+else
+	echo "❌ streamlit not found. Activate the project venv first:"
+	echo "   cd ${SCRIPT_DIR}/.. && source .venv/bin/activate && pip install -r requirements.txt"
+	exit 1
+fi
+
+"${STREAMLIT_CMD}" run "$qc_launch_script" --server.port="$port_number" -- \
   --qc_json "$qc_json" \
   --qc_task "$qc_task" \
   --qc_pipeline "$qc_pipeline" \

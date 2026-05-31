@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.config import list_qc_tasks_from_json
+from utils.config import build_substitution_values, list_qc_tasks_from_json
 from managers.session_manager import SessionManager
 from views.landing_page import show_landing_page
 from views.congratulations_page import show_congratulations_page
@@ -56,7 +56,14 @@ def app(
 		st.stop()
 
 	if not SessionManager.is_landing_page_complete():
-		show_landing_page(qc_pipeline, qc_task, out_dir, participant_list, qc_config_path)
+		show_landing_page(
+			qc_pipeline,
+			qc_task,
+			out_dir,
+			participant_list,
+			qc_config_path,
+			qc_cohort=qc_cohort,
+		)
 		return
 
 	if participant_id is None:
@@ -76,10 +83,7 @@ def app(
 		)
 		return
 
-	substitution_values = {
-		"participant_id": participant_id,
-		"session_id": session_id,
-	}
+	substitution_values = build_substitution_values(participant_id, session_id)
 	display_qc_viewers(
 		dataset_dir=dataset_dir,
 		qc_config_path=qc_config_path,

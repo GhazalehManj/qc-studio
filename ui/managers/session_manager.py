@@ -33,6 +33,7 @@ class SessionManager:
             SESSION_KEYS['notes_version']: 0,
             SESSION_KEYS['rating_version']: 0,
             SESSION_KEYS['participant_order']: [],
+            SESSION_KEYS['qc_cohort_order']: [],
             SESSION_KEYS['landing_page_complete']: False,
             SESSION_KEYS['selected_panels']: DEFAULT_PANELS.copy(),
             SESSION_KEYS['montage_max_rows']: DEFAULT_MONTAGE_MAX_ROWS,
@@ -271,6 +272,16 @@ class SessionManager:
     def set_participant_ids(ids: list):
         """Store the participant ID list (used to persist sort order after CSV upload)."""
         st.session_state[SESSION_KEYS['participant_order']] = ids
+
+    @staticmethod
+    def get_qc_cohort_order() -> list:
+        """Stored (participant, session) page order after CSV upload resume."""
+        return st.session_state.get(SESSION_KEYS['qc_cohort_order'], [])
+
+    @staticmethod
+    def set_qc_cohort_order(cohort: list):
+        """Persist cohort page order so multi-session resume keeps session rows."""
+        st.session_state[SESSION_KEYS['qc_cohort_order']] = list(cohort)
 
     @staticmethod
     def get_qc_record_for_participant(participant_id: str, session_id: str, qc_task: str = None):

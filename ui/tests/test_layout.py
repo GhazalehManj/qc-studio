@@ -366,6 +366,7 @@ class TestApp:
             '/output',
             'participants.tsv',
             'config.json',
+            qc_cohort=None,
         )
 
     @patch('app.SessionManager.is_landing_page_complete', return_value=True)

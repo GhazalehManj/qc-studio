@@ -85,6 +85,7 @@ SESSION_KEYS = {
     'notes_version': 'notes_version',
     'rating_version': 'rating_version',
     'participant_order': 'participant_order',
+    'qc_cohort_order': 'qc_cohort_order',
     'landing_page_complete': 'landing_page_complete',
     'selected_panels': 'selected_panels',
     'montage_max_rows': 'montage_max_rows',
@@ -100,7 +101,9 @@ UPLOAD_SEPARATOR_INFERENCE = None  # Let pandas infer
 # Substitution formats for participant and session IDs in qc_config
 SUBSTITUTIONS_DICT = {
     'participant_id': "[[NIPOPPY_BIDS_PARTICIPANT_ID]]",
-    'session_id': "[[NIPOPPY_BIDS_SESSION_ID]]"
+    'session_id': "[[NIPOPPY_BIDS_SESSION_ID]]",
+    # QSIPrep internal workflow slugs use underscores (ses_01) not BIDS hyphens (ses-01).
+    'session_slug': "[[NIPOPPY_QSIPREP_SESSION_SLUG]]",
 }
 
 # Messages and UI strings

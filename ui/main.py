@@ -10,6 +10,13 @@ from components.qc_viewer import AUTOPLAY_RUN_CTX_KEY
 from managers.session_manager import SessionManager
 from constants import SESSION_KEYS
 from views.sidebar_cohort_nav import render_sidebar_cohort_subjects
+from utils.cohort import (
+    build_qc_cohort,
+    normalize_participant_id_bids as _normalize_participant_id,
+    normalize_session_id_bids as _normalize_session_id,
+    parse_session_list as _parse_session_list,
+    participant_ids_in_cohort_order,
+)
 
 
 def parse_args(args=None):
@@ -70,58 +77,6 @@ def parse_args(args=None):
     return parser.parse_args(args)
 
 
-def _normalize_participant_id(pid: str) -> str:
-    p = str(pid).strip()
-    return p if p.startswith("sub-") else f"sub-{p}"
-
-
-def _normalize_session_id(sid: str) -> str:
-    s = str(sid).strip()
-    if not s:
-        return "ses-01"
-    if s.lower() == "baseline":
-        return "ses-01"
-    if s.startswith("ses-"):
-        return s
-    if s.isdigit():
-        return f"ses-{int(s):02d}"
-    return s if s.startswith("ses-") else f"ses-{s}"
-
-
-def _parse_session_list(raw: str | None) -> list[str]:
-    """Return ordered unique BIDS session ids from CLI ``--session_list``."""
-    if raw is None or str(raw).strip() == "":
-        return ["ses-01"]
-    s = str(raw).strip()
-    if s.lower() == "baseline":
-        return ["ses-01"]
-    parts = [p.strip() for p in s.split(",") if p.strip()]
-    if not parts:
-        return ["ses-01"]
-    seen = []
-    for p in parts:
-        norm = _normalize_session_id(p)
-        if norm not in seen:
-            seen.append(norm)
-    return seen or ["ses-01"]
-
-
-def _build_qc_cohort(participants_df: pd.DataFrame, session_ids: list[str]) -> list[dict]:
-    """Each dict is one pagination page: participant_id + session_id."""
-    rows: list[dict] = []
-    if "session_id" in participants_df.columns:
-        for _, r in participants_df.iterrows():
-            pid = _normalize_participant_id(r["participant_id"])
-            sid = _normalize_session_id(r["session_id"])
-            rows.append({"participant_id": pid, "session_id": sid})
-        return rows
-    for pid_raw in participants_df["participant_id"].tolist():
-        pid = _normalize_participant_id(pid_raw)
-        for sid in session_ids:
-            rows.append({"participant_id": pid, "session_id": sid})
-    return rows
-
-
 def get_cli_run_context():
     """Paths and counts from CLI args.
 
@@ -133,20 +88,13 @@ def get_cli_run_context():
     qc_config_path = os.path.join(ui_dir, args.qc_json)
     session_ids = _parse_session_list(args.session_list)
     participants_df = pd.read_csv(args.participant_list, delimiter="\t")
-    stored_ids = SessionManager.get_participant_ids()
-    if stored_ids:
-        cohort_df = pd.DataFrame({"participant_id": stored_ids})
-        qc_cohort = _build_qc_cohort(cohort_df, session_ids)
+    stored_cohort = SessionManager.get_qc_cohort_order()
+    if stored_cohort:
+        qc_cohort = stored_cohort
     else:
-        qc_cohort = _build_qc_cohort(participants_df, session_ids)
+        qc_cohort = build_qc_cohort(participants_df, session_ids)
     total_participants = len(qc_cohort)
-    participant_ids = []
-    seen = set()
-    for e in qc_cohort:
-        pid = e["participant_id"]
-        if pid not in seen:
-            seen.add(pid)
-            participant_ids.append(pid)
+    participant_ids = participant_ids_in_cohort_order(qc_cohort)
     qc_tasks = resolve_qc_tasks(args.qc_task, qc_config_path)
     if str(args.qc_task).strip().lower() == "all" and not qc_tasks:
         print(

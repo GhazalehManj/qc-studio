@@ -10,7 +10,15 @@ from managers.session_manager import SessionManager
 from models import QCRecord
 from managers.panel_layout_manager import PanelLayoutManager
 from managers.niivue_viewer_manager import NiivueViewerManager
-from utils.config import parse_qc_config
+from utils.config import list_qc_tasks_from_json, parse_qc_config
+from utils.cohort import (
+	bare_bids_id,
+	build_qc_cohort,
+	count_complete_cohort_pages,
+	decided_rating_keys_from_df,
+	invalid_upload_cohort_pairs,
+	participant_ids_in_cohort_order,
+)
 
 
 def _normalize_participant_id(pid: str) -> str:
@@ -47,6 +55,42 @@ def _maybe_apply_montage_defaults_from_qc_json(
 	st.session_state[applied_key] = qc_task
 
 
+def _upload_qc_task_filter_keys(qc_task: str, qc_config_path: str) -> list[str] | None:
+	"""QC task keys to keep when filtering an uploaded results file.
+
+	For ``--qc_task all``, exports store concrete task names (``anat_wf_qc``, etc.),
+	not the literal CLI value ``all``.
+	"""
+	if str(qc_task).strip().lower() == "all":
+		tasks = list_qc_tasks_from_json(qc_config_path)
+		return tasks if tasks else None
+	return [str(qc_task).strip()]
+
+
+def _filter_uploaded_df_for_qc_task(
+	df: pd.DataFrame,
+	qc_task: str,
+	qc_config_path: str,
+) -> pd.DataFrame:
+	"""Return uploaded rows that belong to the current QC workflow."""
+	if "qc_task" not in df.columns:
+		return df.copy()
+	filter_keys = _upload_qc_task_filter_keys(qc_task, qc_config_path)
+	if filter_keys is None:
+		return df.iloc[0:0].copy()
+	return df[df["qc_task"].astype(str).isin(filter_keys)].copy()
+
+
+def _upload_filter_label(qc_task: str, qc_config_path: str) -> str:
+	"""Human-readable label for the upload filter caption."""
+	if str(qc_task).strip().lower() == "all":
+		tasks = list_qc_tasks_from_json(qc_config_path)
+		if tasks:
+			return f"all ({', '.join(tasks)})"
+		return "all (no tasks found in qc.json)"
+	return str(qc_task)
+
+
 def show_landing_page(
 	qc_pipeline,
 	qc_task,
@@ -54,6 +98,8 @@ def show_landing_page(
 	participant_list,
 	qc_config_path: str,
 	*,
+	qc_cohort: list[dict] | None = None,
+	session_ids: list[str] | None = None,
 	entrypoint_rel_path: str | None = None,
 ) -> None:
 	"""Display the landing page with rater info, panel selection, and CSV upload.
@@ -64,6 +110,8 @@ def show_landing_page(
 		out_dir: Output directory path
 		participant_list: Path to participant list file
 		qc_config_path: Absolute or cwd-relative path to qc.json (for optional montage defaults)
+		qc_cohort: Optional pre-built (participant, session) page list from CLI context
+		session_ids: BIDS session labels when ``qc_cohort`` is not provided
 		entrypoint_rel_path: If set (for example ``"main.py"``), a successful Continue to QC
 			uses ``st.switch_page`` so the multipage sidebar hands off to the real app entrypoint.
 			Omit when the host is already ``main`` / ``app`` (normal ``st.rerun()``).
@@ -78,6 +126,9 @@ def show_landing_page(
 		total_participants_in_ds = len(set(normalized_ids))
 		participant_ids_in_ds = set(normalized_ids)
 		participant_ids_ordered = normalized_ids
+		if qc_cohort is None:
+			qc_cohort = build_qc_cohort(participants_df, session_ids or ["ses-01"])
+		total_cohort_pages = len(qc_cohort)
 	except Exception as e:
 		st.error(ERROR_MESSAGES['participant_list_load_error'].format(error=e))
 		return
@@ -85,7 +136,10 @@ def show_landing_page(
 	if raw_ids:
 		_maybe_apply_montage_defaults_from_qc_json(qc_config_path, qc_task, raw_ids[0])
 
-	st.subheader(f"QC Pipeline: {qc_pipeline} | QC Task: {qc_task} | n_ds_participants: {total_participants_in_ds}")
+	st.subheader(
+		f"QC Pipeline: {qc_pipeline} | QC Task: {qc_task} | "
+		f"n_ds_participants: {total_participants_in_ds} | n_cohort_pages: {total_cohort_pages}"
+	)
 	
 	st.markdown("---")
 	
@@ -104,7 +158,13 @@ def show_landing_page(
 	
 	# Right column: CSV Upload
 	with col3:
-		_display_csv_upload(participant_ids_in_ds, total_participants_in_ds, participant_ids_ordered, qc_task)
+		_display_csv_upload(
+			participant_ids_in_ds,
+			total_cohort_pages,
+			qc_cohort,
+			qc_task,
+			qc_config_path,
+		)
 	
 	st.markdown("---")
 	
@@ -171,15 +231,23 @@ def _display_rater_form(entrypoint_rel_path: str | None = None) -> None:
 				st.rerun()
 
 
-def _display_csv_upload(participant_ids_in_ds: set, total_participants_in_ds: int, all_participant_ids: list, qc_task: str) -> None:
+def _display_csv_upload(
+	participant_ids_in_ds: set,
+	total_cohort_pages: int,
+	qc_cohort: list[dict],
+	qc_task: str,
+	qc_config_path: str,
+) -> None:
 	"""Render CSV upload section in the landing page.
 	
 	Args:
-		participant_ids_in_ds: Set of participant IDs in dataset
-		total_participants_in_ds: Total number of participants in dataset
-		all_participant_ids: Ordered list of participant IDs from the participant file
+		participant_ids_in_ds: Set of bare participant IDs in dataset
+		total_cohort_pages: Total (participant, session) pages in this run
+		qc_cohort: Ordered cohort rows for pagination
 		qc_task: Current QC task name (used to filter uploaded CSV)
+		qc_config_path: Path to qc.json (required when ``qc_task`` is ``all``)
 	"""
+	qc_tasks = _upload_qc_task_filter_keys(qc_task, qc_config_path) or []
 	st.subheader(MESSAGES['upload_header'])
 	st.info(MESSAGES['upload_help'])
 	
@@ -204,21 +272,20 @@ def _display_csv_upload(participant_ids_in_ds: set, total_participants_in_ds: in
 			df['participant_id'] = df['participant_id'].astype(str)
 			df['_participant_id_norm'] = df['participant_id'].map(_normalize_participant_id)
 
-			# Filter to current qc_task for validation and progress tracking.
-			if 'qc_task' in df.columns:
-				df_task = df[df['qc_task'].astype(str) == str(qc_task)].copy()
-			else:
-				df_task = df.copy()
+			df_task = _filter_uploaded_df_for_qc_task(df, qc_task, qc_config_path)
+			filter_label = _upload_filter_label(qc_task, qc_config_path)
+			decided = decided_rating_keys_from_df(df_task, qc_tasks)
+			pages_reviewed = count_complete_cohort_pages(qc_cohort, qc_tasks, decided)
+			participant_ids_in_csv = {
+				bare_bids_id(str(pid), "sub-")
+				for pid in df_task['_participant_id_norm'].unique()
+			}
 			
 			st.success(SUCCESS_MESSAGES['csv_loaded'].format(
 				count=len(df),
 				filename=uploaded_file.name
 			))
-			st.caption(f"Current workflow filter: **{qc_task}**")
-			
-			# Get unique participants in the uploaded CSV
-			unique_participants_in_csv = df_task['_participant_id_norm'].nunique()
-			participant_ids_in_csv = set(df_task['_participant_id_norm'].unique())
+			st.caption(f"Current workflow filter: **{filter_label}**")
 			
 			# Validate: Check if CSV has participants not in the participant list
 			invalid_participants = participant_ids_in_csv - participant_ids_in_ds
@@ -228,13 +295,14 @@ def _display_csv_upload(participant_ids_in_ds: set, total_participants_in_ds: in
 					participants=', '.join(sorted(invalid_participants))
 				))
 				st.stop()
-			
-			# Check if CSV has more unique participants than dataset
-			if unique_participants_in_csv > total_participants_in_ds:
-				st.error(ERROR_MESSAGES['too_many_participants'].format(
-					csv_count=unique_participants_in_csv,
-					list_count=total_participants_in_ds
-				))
+
+			invalid_pairs = invalid_upload_cohort_pairs(df_task, qc_cohort, participant_ids_in_ds)
+			if invalid_pairs:
+				pair_text = ", ".join(f"{pid} / {sid}" for pid, sid in sorted(invalid_pairs))
+				st.error(
+					f"❌ Error: The uploaded file contains {len(invalid_pairs)} "
+					f"participant/session pair(s) not in this cohort: {pair_text}"
+				)
 				st.stop()
 			
 			# Load participant list and show comparison
@@ -242,12 +310,12 @@ def _display_csv_upload(participant_ids_in_ds: set, total_participants_in_ds: in
 				# Create comparison display
 				col_comp1, col_comp2 = st.columns(2)
 				with col_comp1:
-					st.metric("Participants Reviewed", unique_participants_in_csv)
+					st.metric("Cohort pages reviewed", pages_reviewed)
 				with col_comp2:
-					st.metric("Total Participants in ds", total_participants_in_ds)
+					st.metric("Total cohort pages", total_cohort_pages)
 				
 				# Progress percentage
-				progress_pct = (unique_participants_in_csv / total_participants_in_ds) * 100 if total_participants_in_ds > 0 else 0
+				progress_pct = (pages_reviewed / total_cohort_pages) * 100 if total_cohort_pages > 0 else 0
 				st.progress(min(progress_pct / 100, 1.0), text=f"{progress_pct:.1f}% complete")
 				
 			except Exception as e:
@@ -274,9 +342,12 @@ def _display_csv_upload(participant_ids_in_ds: set, total_participants_in_ds: in
 			# Display preview (filtered to current qc_task)
 			st.subheader(INFO_MESSAGES['preview_header'])
 			if df_task.empty:
-				st.warning(f"No records found for task **{qc_task}** in the uploaded file. All {len(df)} records are for other tasks.")
+				st.warning(
+					f"No records found for workflow **{filter_label}** in the uploaded file. "
+					f"All {len(df)} records are for other tasks."
+				)
 			else:
-				st.caption(f"Showing records for task: **{qc_task}**")
+				st.caption(f"Showing records for workflow: **{filter_label}**")
 				st.dataframe(df_task.head(10), width='stretch')
 			
 			# Option to load these records
@@ -299,16 +370,10 @@ def _display_csv_upload(participant_ids_in_ds: set, total_participants_in_ds: in
 					loaded_records.append(record)
 				
 				SessionManager.set_qc_records(loaded_records)
-				# Sort participant list: rated participants first, unrated after
-				rated_ids = set(df_task['_participant_id_norm'].astype(str).unique())
-				sorted_ids = (
-					[pid for pid in all_participant_ids if str(pid) in rated_ids] +
-					[pid for pid in all_participant_ids if str(pid) not in rated_ids]
-				)
-				SessionManager.set_participant_ids(sorted_ids)
-				# Jump to the first unrated participant
-				next_page = len(rated_ids) + 1
-				SessionManager.set_current_page(min(next_page, total_participants_in_ds))
+				SessionManager.set_qc_cohort_order(qc_cohort)
+				SessionManager.set_participant_ids(participant_ids_in_cohort_order(qc_cohort))
+				next_page = SessionManager.first_qc_cohort_page_missing_for_tasks(qc_tasks, qc_cohort)
+				SessionManager.set_current_page(min(next_page, total_cohort_pages))
 				st.success(SUCCESS_MESSAGES['records_loaded'].format(count=len(loaded_records)))
 				st.info(INFO_MESSAGES['proceed_with_form'])
 				
