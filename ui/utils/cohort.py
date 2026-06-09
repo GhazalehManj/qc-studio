@@ -101,7 +101,7 @@ def decided_rating_keys_from_df(df: pd.DataFrame, qc_tasks: list[str]) -> set[tu
 def is_cohort_page_complete(
 	entry: dict,
 	qc_tasks: list[str],
-decided: set[tuple[str, str | None, str]],
+	decided: set[tuple[str, str | None, str]],
 ) -> bool:
 	page_pid, page_sid = cohort_page_key(entry)
 	for task in qc_tasks:
