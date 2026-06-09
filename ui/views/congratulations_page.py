@@ -175,7 +175,14 @@ def _export_qc_results(rater_id: str, out_dir: str, record_list: list, drop_dupl
 	"""
 	out_file = Path(out_dir) / f"{rater_id}_QC_status.tsv"
 	if record_list:
-		out_path = save_qc_results_to_csv(out_file, record_list, drop_duplicates)
-		st.success(SUCCESS_MESSAGES["records_exported"].format(path=out_path))
+		out_path, dropped, dropped_details = save_qc_results_to_csv(out_file, record_list, drop_duplicates)
+		msg = SUCCESS_MESSAGES["records_exported"].format(path=out_path)
+		if dropped:
+			lines = "\n".join(
+				f"- {pid} × {sid}: {', '.join(tasks)}"
+				for (pid, sid), tasks in dropped_details.items()
+			)
+			msg += f"\n\n⚠️ {dropped} duplicate record(s) removed (kept latest):\n{lines}"
+		st.session_state["_pending_export_msg"] = ("success", msg)
 	else:
-		st.info(INFO_MESSAGES["no_export_records"])
+		st.session_state["_pending_export_msg"] = ("info", INFO_MESSAGES["no_export_records"])
