@@ -83,7 +83,7 @@ def decided_rating_keys_from_df(df: pd.DataFrame, qc_tasks: list[str]) -> set[tu
 	if df is None or df.empty or not qc_tasks:
 		return set()
 	allowed = {str(t) for t in qc_tasks}
-	out: set[tuple[str, str, str]] = set()
+out: set[tuple[str, str | None, str]] = set()
 	for _, row in df.iterrows():
 		task = str(row.get("qc_task", ""))
 		if task not in allowed:
