@@ -97,7 +97,9 @@ def show_congratulations_page(
 	_display_session_summary(
 		rater_id, task_label, record_list, reviewed_count=summary_count, multi_task=len(tasks_eff) > 1
 	)
-
+	if pending := st.session_state.pop("_pending_export_msg", None):
+		kind, msg = pending
+		(st.success if kind == "success" else st.info)(msg)
 	# Action buttons
 	col1, col2, col3 = st.columns([1, 1, 1])
 	with col1:
