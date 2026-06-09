@@ -372,7 +372,11 @@ def _display_csv_upload(
 				SessionManager.set_qc_records(loaded_records)
 				SessionManager.set_qc_cohort_order(qc_cohort)
 				SessionManager.set_participant_ids(participant_ids_in_cohort_order(qc_cohort))
-				next_page = SessionManager.first_qc_cohort_page_missing_for_tasks(qc_tasks, qc_cohort)
+				if SessionManager.all_qc_cohort_pages_complete_for_tasks(qc_tasks, qc_cohort):
+					SessionManager.set_current_page(total_cohort_pages + 1)
+				else:
+					next_page = SessionManager.first_qc_cohort_page_missing_for_tasks(qc_tasks, qc_cohort)
+					SessionManager.set_current_page(next_page)
 				SessionManager.set_current_page(min(next_page, total_cohort_pages))
 				st.success(SUCCESS_MESSAGES['records_loaded'].format(count=len(loaded_records)))
 				st.info(INFO_MESSAGES['proceed_with_form'])
