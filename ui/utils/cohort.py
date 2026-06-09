@@ -21,14 +21,12 @@ def normalize_participant_id_bids(pid: str) -> str:
 def normalize_session_id_bids(sid: str) -> str:
 	s = str(sid).strip()
 	if not s:
-		return "ses-01"
-	if s.lower() == "baseline":
-		return "ses-01"
+		raise ValueError("session id cannot be empty")
 	if s.startswith("ses-"):
 		return s
 	if s.isdigit():
 		return f"ses-{int(s):02d}"
-	return s if s.startswith("ses-") else f"ses-{s}"
+	return f"ses-{s}"
 
 
 def parse_session_list(raw: str | None) -> list[str]:
