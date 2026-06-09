@@ -137,8 +137,8 @@ def invalid_upload_cohort_pairs(
 ) -> list[tuple[str, str | None]]:
 	"""(participant_id, session_id) pairs in upload that are not in the cohort or participant list."""
 	valid_pages = cohort_page_keys(qc_cohort)
-	invalid: list[tuple[str, str]] = []
-	seen_invalid: set[tuple[str, str]] = set()
+	invalid: list[tuple[str, str | None]] = []
+	seen_invalid: set[tuple[str, str | None]] = set()
 	if df_task.empty:
 		return invalid
 	for _, row in df_task.iterrows():
