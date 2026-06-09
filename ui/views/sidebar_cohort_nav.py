@@ -7,7 +7,7 @@ import streamlit as st
 from constants import MESSAGES
 from managers.session_manager import SessionManager
 
-
+_MAX_PID_DISPLAY_LEN = 28
 def render_sidebar_cohort_subjects(
 	*,
 	qc_cohort: list | None = None,
