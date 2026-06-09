@@ -78,7 +78,7 @@ def participant_ids_in_cohort_order(qc_cohort: list[dict]) -> list[str]:
 	return out
 
 
-def decided_rating_keys_from_df(df: pd.DataFrame, qc_tasks: list[str]) -> set[tuple[str, str, str]]:
+def decided_rating_keys_from_df(df: pd.DataFrame, qc_tasks: list[str]) -> set[tuple[str, str | None, str]]:
 	"""(bare_pid, bare_sid, task) tuples with PASS/FAIL/UNCERTAIN in ``df``."""
 	if df is None or df.empty or not qc_tasks:
 		return set()
