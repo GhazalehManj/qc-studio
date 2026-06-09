@@ -50,10 +50,11 @@ def build_qc_cohort(participants_df: pd.DataFrame, session_ids: list[str]) -> li
 	return rows
 
 
-def cohort_page_key(entry: dict) -> tuple[str, str]:
+def cohort_page_key(entry: dict) -> tuple[str, str | None]:
+	sid = entry["session_id"]
 	return (
 		bare_bids_id(entry["participant_id"], "sub-"),
-		bare_bids_id(entry["session_id"], "ses-"),
+		bare_bids_id(sid, "ses-") if sid is not None else None,
 	)
 
 
