@@ -428,7 +428,7 @@ def _record_all_qc_tasks(participant_id: str, session_id: str, qc_pipeline: str,
 	rver = SessionManager.get_rating_version()
 	nver = SessionManager.get_notes_version()
 	for t in qc_tasks:
-		rating = st.session_state.get(f"qc_rating_{t}_{rver}", QC_RATINGS[0])
+		rating = st.session_state.get(f"qc_rating_{t}_{rver}")
 		notes = st.session_state.get(f"qc_notes_{t}_{nver}", "")
 		_record_qc_for_current_participant(participant_id, session_id, qc_pipeline, t, rating, notes)
 
