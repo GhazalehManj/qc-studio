@@ -121,7 +121,7 @@ def count_complete_cohort_pages(
 def first_incomplete_cohort_page(
 	qc_cohort: list[dict],
 	qc_tasks: list[str],
-	decided: set[tuple[str, str, str]],
+	decided: set[tuple[str, str | None, str]],
 ) -> int:
 	"""1-based page index of the first cohort row missing a decided rating."""
 	for i, entry in enumerate(qc_cohort or []):
