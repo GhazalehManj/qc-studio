@@ -134,7 +134,7 @@ def invalid_upload_cohort_pairs(
 	df_task: pd.DataFrame,
 	qc_cohort: list[dict],
 	allowed_participant_bare_ids: set[str],
-) -> list[tuple[str, str]]:
+) -> list[tuple[str, str | None]]:
 	"""(participant_id, session_id) pairs in upload that are not in the cohort or participant list."""
 	valid_pages = cohort_page_keys(qc_cohort)
 	invalid: list[tuple[str, str]] = []
