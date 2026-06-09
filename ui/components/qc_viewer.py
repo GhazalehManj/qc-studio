@@ -407,7 +407,7 @@ def _display_qc_rating_for_task(
 		initial_notes = existing_record.notes if hasattr(existing_record, "notes") else existing_record.get("notes", "")
 		initial_notes = initial_notes or ""
 	else:
-		initial_rating = QC_RATINGS[0]
+		initial_rating = None
 		initial_notes = ""
 	st.radio(
 		" ",
