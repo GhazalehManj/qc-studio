@@ -64,8 +64,8 @@ def render_sidebar_cohort_subjects(
 				SessionManager.participant_has_decided_qc(pid, sid, t) for t in tasks_eff
 			)
 			mark = "✅" if done else "⬜"
-			display_pid = pid if len(pid) <= 28 else f"{pid[:25]}..."
-			label_core = f"{display_pid} · {sid}"
+			display_pid = pid if len(pid) <= _MAX_PID_DISPLAY_LEN else f"{pid[:_MAX_PID_DISPLAY_LEN - 3]}..."
+			label_core = f"{display_pid} · {sid}" if sid is not None else display_pid
 			suffix = " — current" if page_num == current_page else ""
 			label = f"{mark} {label_core}{suffix}"
 			if st.button(label, key=f"sidebar_cohort_nav_{i}", width="stretch"):
