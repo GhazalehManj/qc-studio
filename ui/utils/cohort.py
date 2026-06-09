@@ -92,8 +92,8 @@ def decided_rating_keys_from_df(df: pd.DataFrame, qc_tasks: list[str]) -> set[tu
 		if final_qc not in QC_RATINGS:
 			continue
 		pid = bare_bids_id(str(row.get("participant_id", "")), "sub-")
-		sid_raw = row.get("session_id", "")
-		sid = bare_bids_id(normalize_session_id_bids(str(sid_raw) if sid_raw is not None else ""), "ses-")
+		sid_raw = row.get("session_id")
+		sid = bare_bids_id(normalize_session_id_bids(str(sid_raw)), "ses-") if sid_raw else None
 		out.add((pid, sid, task))
 	return out
 
