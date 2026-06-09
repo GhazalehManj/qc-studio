@@ -412,7 +412,7 @@ def _display_qc_rating_for_task(
 	st.radio(
 		" ",
 		options=QC_RATINGS,
-		index=QC_RATINGS.index(initial_rating),
+		index=QC_RATINGS.index(initial_rating) if initial_rating else None,
 		key=f"qc_rating_{qc_task}_{rver}",
 		label_visibility="collapsed",
 	)
