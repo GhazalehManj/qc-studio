@@ -114,4 +114,4 @@ def save_qc_results_to_csv(out_file, qc_records, drop_duplicates=True):
 
 	df.to_csv(out_file, index=False, sep='\t')
 
-	return out_file
+	return out_file, dropped, dropped_details
