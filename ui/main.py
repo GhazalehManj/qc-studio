@@ -148,7 +148,7 @@ def main():
     SessionManager.init_session_state()
     SessionManager.compact_duplicate_qc_records_if_needed()
 
-    session_id_for_sidebar = qc_cohort[0]["session_id"] if qc_cohort else "ses-01"
+    session_id_for_sidebar = qc_cohort[0]["session_id"] if qc_cohort else None
     qc_tasks = ctx["qc_tasks"]
 
     current_page = st.session_state.get(SESSION_KEYS['current_page'], 1)
