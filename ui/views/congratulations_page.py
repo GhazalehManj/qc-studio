@@ -65,7 +65,7 @@ def show_congratulations_page(
 						p = f"sub-{p}"
 					temp_cohort.append({"participant_id": p, "session_id": session_id})
 				miss = SessionManager.first_qc_cohort_page_missing_for_tasks(tasks_eff, temp_cohort)
-			st.session_state[SESSION_KEYS["current_page"]] = miss
+			SessionManager.set_current_page(miss)
 			if entrypoint_rel_path:
 				st.switch_page(entrypoint_rel_path)
 			st.rerun()
