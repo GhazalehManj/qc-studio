@@ -16,35 +16,22 @@ def bare_bids_id(val: str, prefix: str) -> str:
 def normalize_participant_id_bids(pid: str) -> str:
 	p = str(pid).strip()
 	return p if p.startswith("sub-") else f"sub-{p}"
+def parse_session_list(raw: str | None) -> list[str] | None:
+	"""Return ordered unique BIDS session ids from CLI ``--session_list``.
 
-
-def normalize_session_id_bids(sid: str) -> str:
-	s = str(sid).strip()
-	if not s:
-		raise ValueError("session id cannot be empty")
-	if s.startswith("ses-"):
-		return s
-	if s.isdigit():
-		return f"ses-{int(s):02d}"
-	return f"ses-{s}"
-
-
-def parse_session_list(raw: str | None) -> list[str]:
-	"""Return ordered unique BIDS session ids from CLI ``--session_list``."""
+	Returns None for single-session datasets (no session label).
+	"""
 	if raw is None or str(raw).strip() == "":
-		return ["ses-01"]
-	s = str(raw).strip()
-	if s.lower() == "baseline":
-		return ["ses-01"]
-	parts = [p.strip() for p in s.split(",") if p.strip()]
+		return None
+	parts = [p.strip() for p in str(raw).strip().split(",") if p.strip()]
 	if not parts:
-		return ["ses-01"]
+		return None
 	seen: list[str] = []
 	for p in parts:
 		norm = normalize_session_id_bids(p)
 		if norm not in seen:
 			seen.append(norm)
-	return seen or ["ses-01"]
+	return seen or None
 
 
 def build_qc_cohort(participants_df: pd.DataFrame, session_ids: list[str]) -> list[dict]:
