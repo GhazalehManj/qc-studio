@@ -106,6 +106,7 @@ def show_congratulations_page(
 		if st.button(MESSAGES["export_results_button"], width="stretch"):
 			export_rows = SessionManager.get_latest_qc_records_per_dedup(None)
 			_export_qc_results(rater_id, out_dir, export_rows, drop_duplicates)
+			st.rerun()
 	with col2:
 		if st.button(MESSAGES["previous_button"], width="stretch"):
 			SessionManager.previous_page()
