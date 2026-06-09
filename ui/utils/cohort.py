@@ -113,7 +113,7 @@ decided: set[tuple[str, str | None, str]],
 def count_complete_cohort_pages(
 	qc_cohort: list[dict],
 	qc_tasks: list[str],
-	decided: set[tuple[str, str, str]],
+	decided: set[tuple[str, str | None, str]],
 ) -> int:
 	return sum(1 for entry in qc_cohort if is_cohort_page_complete(entry, qc_tasks, decided))
 
