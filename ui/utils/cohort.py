@@ -143,8 +143,13 @@ def invalid_upload_cohort_pairs(
 		return invalid
 	for _, row in df_task.iterrows():
 		pid_bare = bare_bids_id(str(row.get("participant_id", "")), "sub-")
-		sid = normalize_session_id_bids(str(row.get("session_id", "") if row.get("session_id") is not None else ""))
-		sid_bare = bare_bids_id(sid, "ses-")
+		sid_raw = row.get("session_id")
+		if sid_raw:
+			sid = normalize_session_id_bids(str(sid_raw))
+			sid_bare = bare_bids_id(sid, "ses-")
+		else:
+			sid = None
+			sid_bare = None
 		if pid_bare not in allowed_participant_bare_ids:
 			continue
 		key = (pid_bare, sid_bare)
