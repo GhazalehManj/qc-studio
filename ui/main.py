@@ -43,7 +43,7 @@ def parse_args(args=None):
             "If the participant TSV has a session_id column, that table defines "
             "(participant, session) rows instead. Legacy default Baseline maps to ses-01."
         ),
-        default="Baseline",
+        default=None,
         required=False,
     )
     parser.add_argument(
