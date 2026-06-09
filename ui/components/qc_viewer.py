@@ -402,8 +402,8 @@ def _display_qc_rating_for_task(
 	nver = SessionManager.get_notes_version()
 	existing_record = SessionManager.get_qc_record_for_participant(participant_id, session_id, qc_task)
 	if existing_record:
-		existing_rating = existing_record.final_qc if hasattr(existing_record, "final_qc") else existing_record.get("final_qc", QC_RATINGS[0])
-		initial_rating = existing_rating if existing_rating in QC_RATINGS else QC_RATINGS[0]
+		existing_rating = existing_record.final_qc if hasattr(existing_record, "final_qc") else existing_record.get("final_qc")
+		initial_rating = existing_rating if existing_rating in QC_RATINGS else None
 		initial_notes = existing_record.notes if hasattr(existing_record, "notes") else existing_record.get("notes", "")
 		initial_notes = initial_notes or ""
 	else:
