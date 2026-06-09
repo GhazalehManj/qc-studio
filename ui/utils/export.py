@@ -94,6 +94,8 @@ def save_qc_results_to_csv(out_file, qc_records, drop_duplicates=True):
 	df = df[expected_columns]
 
 	# Drop duplicates based on core identity columns
+	dropped = 0
+	dropped_details: list[str] = []
 	if drop_duplicates:
 		existing_keys = [k for k in QC_DEDUP_KEYS if k in df.columns]
 		if existing_keys:
