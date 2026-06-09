@@ -62,7 +62,7 @@ def cohort_page_key(entry: dict) -> tuple[str, str | None]:
 	)
 
 
-def cohort_page_keys(qc_cohort: list[dict]) -> set[tuple[str, str]]:
+def cohort_page_keys(qc_cohort: list[dict]) -> set[tuple[str, str | None]]:
 	return {cohort_page_key(entry) for entry in qc_cohort}
 
 
