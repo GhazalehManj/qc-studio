@@ -87,6 +87,16 @@ def get_cli_run_context():
     ui_dir = os.path.dirname(os.path.abspath(__file__))
     qc_config_path = os.path.join(ui_dir, args.qc_json)
     session_ids = _parse_session_list(args.session_list)
+    if session_ids is None:
+        from bids import BIDSLayout
+        layout = BIDSLayout(args.dataset_dir, validate=False)
+        bids_sessions = layout.get_sessions()
+        if bids_sessions:
+            session_ids = [_normalize_session_id(s) for s in bids_sessions]
+            print(
+                f"No --session_list given, using sessions found in dataset: {session_ids}",
+                file=sys.stderr,
+            )
     participants_df = pd.read_csv(args.participant_list, delimiter="\t")
     stored_cohort = SessionManager.get_qc_cohort_order()
     if stored_cohort:
