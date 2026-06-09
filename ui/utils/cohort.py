@@ -34,19 +34,23 @@ def parse_session_list(raw: str | None) -> list[str] | None:
 	return seen or None
 
 
-def build_qc_cohort(participants_df: pd.DataFrame, session_ids: list[str]) -> list[dict]:
-	"""Each dict is one pagination page: participant_id + session_id."""
+def build_qc_cohort(participants_df: pd.DataFrame, session_ids: list[str] | None) -> list[dict]:
+	"""Each dict is one pagination page: participant_id + session_id (None for datasets with no session level)."""
 	rows: list[dict] = []
 	if "session_id" in participants_df.columns:
 		for _, r in participants_df.iterrows():
 			pid = normalize_participant_id_bids(r["participant_id"])
-			sid = normalize_session_id_bids(r["session_id"])
+			sid_raw = r.get("session_id")
+			sid = normalize_session_id_bids(str(sid_raw)) if sid_raw else None
 			rows.append({"participant_id": pid, "session_id": sid})
 		return rows
 	for pid_raw in participants_df["participant_id"].tolist():
 		pid = normalize_participant_id_bids(pid_raw)
-		for sid in session_ids:
-			rows.append({"participant_id": pid, "session_id": sid})
+		if session_ids is None:
+			rows.append({"participant_id": pid, "session_id": None})
+		else:
+			for sid in session_ids:
+				rows.append({"participant_id": pid, "session_id": sid})
 	return rows
 
 
