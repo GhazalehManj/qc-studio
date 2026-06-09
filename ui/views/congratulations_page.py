@@ -114,7 +114,7 @@ def show_congratulations_page(
 				st.switch_page(entrypoint_rel_path)
 			st.rerun()
 	with col3:
-if st.button(MESSAGES["start_over_button"], width="stretch"):
+		if st.button(MESSAGES["start_over_button"], width="stretch"):
 			SessionManager.set_landing_page_complete(False)
 			SessionManager.set_qc_cohort_order([])
 			SessionManager.set_participant_ids([])
