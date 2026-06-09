@@ -102,7 +102,17 @@ def save_qc_results_to_csv(out_file, qc_records, drop_duplicates=True):
 			# Normalise to string so int/str type mismatches (e.g. session_id 1 vs "1") don't prevent dedup
 			for col in existing_keys:
 				df[col] = df[col].astype(str)
-			df = df.drop_duplicates(subset=existing_keys, keep="last")
+			duped_mask = df.duplicated(subset=existing_keys, keep="last")
+			dropped = duped_mask.sum()
+			grouped: dict[tuple[str, str], list[str]] = {}
+			for _, r in df.loc[duped_mask].iterrows():
+				key = (r.get("participant_id", ""), r.get("session_id", ""))
+				grouped.setdefault(key, [])
+				task = r.get("qc_task", "")
+				if task not in grouped[key]:
+					grouped[key].append(task)
+			dropped_details = {k: v for k, v in grouped.items()}
+			df = df[~duped_mask]
 
 	# Cohort-style row order: all tasks for participant A session 1, then session 2, then next participant.
 	if not df.empty:
