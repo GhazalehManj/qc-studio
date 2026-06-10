@@ -119,6 +119,7 @@ def show_congratulations_page(
 			SessionManager.set_qc_cohort_order([])
 			SessionManager.set_participant_ids([])
 			SessionManager.set_qc_records([])
+			SessionManager.set_current_page(1)
 			if entrypoint_rel_path:
 				st.switch_page(entrypoint_rel_path)
 			st.rerun()
