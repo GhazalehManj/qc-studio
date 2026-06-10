@@ -16,6 +16,17 @@ def bare_bids_id(val: str, prefix: str) -> str:
 def normalize_participant_id_bids(pid: str) -> str:
 	p = str(pid).strip()
 	return p if p.startswith("sub-") else f"sub-{p}"
+
+
+def normalize_session_id_bids(sid: str) -> str:
+	s = str(sid).strip()
+	if not s:
+		raise ValueError("session id cannot be empty")
+	if s.startswith("ses-"):
+		return s
+	if s.isdigit():
+		return f"ses-{int(s):02d}"
+	return f"ses-{s}"
 def parse_session_list(raw: str | None) -> list[str] | None:
 	"""Return ordered unique BIDS session ids from CLI ``--session_list``.
 
