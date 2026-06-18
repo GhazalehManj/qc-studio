@@ -1,105 +1,114 @@
 # FreeSurfer QC
 
-## 1. Purpose and Scope
+## Quick reference
 
-This QC protocol ensures that FreeSurfer outputs meet quality standards before they are used for downstream analysis. It is intended for students or research assistants who are reviewing FreeSurfer outputs through the Streamlit QC app.
+| Rating | When to use |
+|--------|-------------|
+| **PASS** | Red and blue outlines follow brain anatomy; no major cortex missing; cerebellum may be partly excluded |
+| **FAIL** | Major cortex excluded, outlines in skull, or segmentation clearly wrong |
+| **UNCERTAIN** | Borderline case — flag for supervisor review |
 
-FreeSurfer is a neuroimaging pipeline used for cortical reconstruction from anatomical T1-weighted images. FreeSurfer produces outputs that are used to measure brain structure, including cortical thickness, cortical surface area, regional brain volumes, and white matter/gray matter boundaries.
+**In the app:** Open each participant × session, review the recon-all figure (red = outer brain boundary, blue = white matter), check all axes, then rate.
 
-The purpose of FreeSurfer QC is to check whether the automated segmentation outlines the brain and white matter correctly and to identify scans that clearly pass, fail, or need supervisor review. Small imperfections are expected, so the goal is not to fail every scan with minor errors. The goal is to identify cases where FreeSurfer clearly failed, where major brain regions are missing, or where the red/blue outlines are incorrect in a way that may affect downstream analysis.
+**Sample data:** `sample_data/fmriprep/<subject>/figures/` (same tree as fMRIPrep; see `pipelines/freesurfer/qc.json`).
 
-## 2. Getting Started with the Interface
+---
 
-Before starting QC, make sure FreeSurfer has successfully run for the subject or session. The output folder should contain FreeSurfer derivatives and visual reports for each participant.
+## 1. What you are checking
 
-Open the subject/session in the Streamlit QC app and review the FreeSurfer QC panel. For each scan, check whether the participant image includes the brain only and whether the segmentation outlines are placed correctly.
+FreeSurfer reconstructs cortex from a T1w scan. Your job is to confirm the **red** (brain/skull-stripped boundary) and **blue** (white matter) outlines look correct — not to catch every tiny flaw.
 
-The main things to check are the red outline, the blue outline and Euler values. Always check all axes before making a final decision, because some issues may only be visible in one view.
+Small imperfections are normal. Fail only when errors would likely affect downstream analysis.
 
-If the scan clearly meets the pass criteria, mark it as **PASS**. If the scan clearly meets the fail criteria, mark it as **FAIL**. If the case is uncertain or borderline, mark it as **UNCERTAIN** for supervisor review.
+---
 
-## 3. QC Panel 1 – FreeSurfer Surface Segmentation
+## 2. Outlines — what they mean
 
-FreeSurfer QC focuses mainly on Surface Segmentation. It is used to check whether the brain mask, cortical outline, and white matter outline are accurate. The main goal is to make sure that the red and blue outlines follow the correct brain structures and do not extend into skull or non-brain tissue.
+| Outline | Meaning | Fail if… |
+|---------|---------|----------|
+| **Red** | Outer brain boundary (skull strip) | Major cortex missing, or line runs into skull |
+| **Blue** | White matter boundary | Major WM missing, or line runs into skull / non-brain tissue |
 
-### What Does the Red Outline Mean
+**Cerebellum:** The red outline should follow cortex and **may exclude** cerebellum. Missing cerebellum from the outline can still **PASS**.
 
-The red outline represents the skullstrip or outer brain boundary. It should follow the outside of the brain and should not extend into the skull. The red outline is used to check whether FreeSurfer correctly identified the brain boundary. In this QC guide, the cerebellum should be excluded from the cortical outline. If major parts of the cortex are missing from the red outline, the scan should fail.
+Always view **all axes** before rating — some problems show in only one view.
 
-### What Does the Blue Outline Mean
+---
 
-The blue outline traces the white matter area, which usually appears as the lighter inner part of the brain. It should follow the white matter boundary and should not extend into the skull or non-brain tissue. If the blue outline excludes major parts of the white matter, the scan should fail.
+## 3. Good example
 
-### What to Check
+<img src="freesurfer_QC_guidelines_assets/good_example.png" alt="Good FreeSurfer segmentation: red brain outline and blue white-matter outline" width="720">
 
-- Check that the participant image includes the brain only. The scan should not show major skull or spinal cord inclusion. If skull or spinal cord is visible, this may need to be flagged. This is called over-inclusive masking. Only rate the scan as fail if the red or blue outline extends into the skull.
-- Check that both the red and blue outlines are present. If either outline is missing, the scan should be flagged because it is difficult to judge the segmentation properly.
-- Check that the red outline follows the outer brain boundary. The red outline should trace the brain and should not include skull. The red outline should follow the cortex but should exclude the cerebellum. If parts of the cerebellum are missing from the outline, this can pass. The more important issue is whether major parts of the cortex are missing.
-- Check that the blue outline follows the white matter area. The blue outline should stay within the lighter white matter region and should not extend into skull, spinal cord, or non-brain tissue.
+*Red traces the brain boundary; blue traces white matter. No skull in the outlines; cerebellum excluded.*
 
-### Good Example
+**→ PASS**
 
-![](freesurfer_QC_guidelines_assets/good_example.png)
+---
 
-The red line is outlining the brain and the blue line is outlining white matter. No non-brain regions are included and the cerebellum is excluded.
+## 4. Common issues
 
-### Common Issues
+### Over-inclusive masking (skull visible in image)
 
-#### Over-inclusive FreeSurfer Masking
+Skull may appear in the background. This is **not** an automatic fail — only fail if the **red or blue outline extends into skull**.
 
-Occurs when a big portion of the skull is included in the image. The image should ideally only show the brain. However, this rating does not automatically constitute a Fail. Only rate as fail if the red or blue outline extends into the skull.
+<img src="freesurfer_QC_guidelines_assets/over_inclusive_masking.png" alt="Skull visible around brain — check whether outlines cross into skull" width="720">
 
-![](freesurfer_QC_guidelines_assets/over_inclusive_masking.png)
+---
 
-#### Underexclusive Masking
+### Underexclusive masking (cortex missing from outline)
 
-Occurs when major parts of the cortex are excluded from the outline. For example, if major parts of the frontal cortex are excluded, mark the scan as underexclusive. The scan should fail.
+Major parts of cortex excluded from the red outline → **FAIL**.
 
-![](freesurfer_QC_guidelines_assets/underexclusive_masking_1.png)
-![](freesurfer_QC_guidelines_assets/underexclusive_masking_2.png)
+<img src="freesurfer_QC_guidelines_assets/underexclusive_masking_1.png" alt="Underexclusive masking example 1 — frontal cortex excluded" width="360">
+<img src="freesurfer_QC_guidelines_assets/underexclusive_masking_2.png" alt="Underexclusive masking example 2 — cortex excluded from outline" width="360">
 
-#### Temporal Lobe Excluded from the Outline
+---
 
-A common issue is the temporal lobe being excluded from the outlining. This should be checked carefully across all axes. If the exclusion is major, the scan should be failed or flagged for supervisor review.
+### Temporal lobe excluded
 
-![](freesurfer_QC_guidelines_assets/temporal_lobe_excluded.png)
+Check all axes. Major temporal-lobe exclusion → **FAIL** or **UNCERTAIN**.
 
-#### Missing Major Parts of Cerebellum from Outline
+<img src="freesurfer_QC_guidelines_assets/temporal_lobe_excluded.png" alt="Temporal lobe excluded from cortical outline" width="360">
 
-If major parts of the cerebellum are missing from the outline, the scan can still Pass.
+---
 
-![](freesurfer_QC_guidelines_assets/missing_cerebellum_pass.png)
+### Missing cerebellum from outline
 
-#### Minor Portion of Skull Included
+Can still **PASS** if cortex is otherwise fine.
 
-The participant brain should only include brain and should not include skull. However, skull appearing in the background does not automatically mean fail. The scan should fail only if the red or blue outline extends into the skull.
+<img src="freesurfer_QC_guidelines_assets/missing_cerebellum_pass.png" alt="Cerebellum partly outside red outline — acceptable" width="720">
 
-![](freesurfer_QC_guidelines_assets/minor_skull_1.png)
-![](freesurfer_QC_guidelines_assets/minor_skull_2.png)
+---
 
-#### Minor Portion of Cerebellum Included
+### Minor skull in background
 
-The participant brain should only include the cortex. However, the outline can sometimes extend into the cerebellum. The scan should not be Fail but should be flagged.
+Fail only if outlines cross into skull.
 
-![](freesurfer_QC_guidelines_assets/minor_cerebellum.png)
+<img src="freesurfer_QC_guidelines_assets/minor_skull_1.png" alt="Minor skull visible — outlines still on brain" width="360">
+<img src="freesurfer_QC_guidelines_assets/minor_skull_2.png" alt="Minor skull visible — second view" width="360">
 
-The outline in x=17, x=-16 and y=-62 extend into the cerebellum.
+---
 
-#### Missing Red or Blue Outline
+### Minor cerebellum inclusion
 
-Both red and blue outlines should be present. If one outline is missing, the scan should be flagged because the segmentation cannot be judged properly.
+Outline slightly into cerebellum → usually **not FAIL**, but note it (e.g. slices x=17, x=−16, y=−62).
 
-![](freesurfer_QC_guidelines_assets/missing_outline.png)
+<img src="freesurfer_QC_guidelines_assets/minor_cerebellum.png" alt="Outline slightly extends into cerebellum" width="720">
 
-## 4. QC Panel 2 – Euler Values
+---
 
-### What Are Euler Values
+### Missing red or blue outline
 
-Euler values should be checked as part of FreeSurfer QC, but they are usually automatically rated in the interface. In general, the expected Euler value range is **-150 to 2**. However, Euler values are not the only deciding factor. For each study, we will also review the distribution of Euler values across participants before making final decisions. A scan can still pass if the segmentation is visually correct, even if the Euler value is not ideal.
+Cannot judge segmentation properly → **UNCERTAIN** or **FAIL**.
 
-### What to Check
+<img src="freesurfer_QC_guidelines_assets/missing_outline.png" alt="Missing red or blue segmentation outline" width="720">
 
-- Check the Euler value shown in the interface.
-- In general, Euler values are expected to be between -150 and 2.
-- Check the distribution of Euler values within the study before making final decisions.
-- Do not fail a scan based only on the Euler value if the segmentation looks visually correct.
+---
+
+## 5. Euler values
+
+Euler numbers are shown in the app (typical range **−150 to 2**).
+
+- Use Euler as **one signal**, not the only rule.
+- Do **not** fail on Euler alone if the segmentation looks good visually.
+- Study-wide Euler distributions may inform final decisions.

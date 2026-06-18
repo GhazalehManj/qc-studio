@@ -1,147 +1,90 @@
-# NODDI Registration (noddireg)
+# NODDIreg QC
 
-**Location (repo sample):** `sample_data/noddireg/<subject>/` — PNGs under `figures/`; subject-level NIfTIs (`*_dwiref.nii.gz`, `*_dseg.nii.gz`) at the subject root. In production, point `--dataset_dir` at your NODDIreg share (same flat layout per subject).
+## Quick reference
 
-**Review:** PNG figures in `figures/`; use QC-Studio’s parcellation overlay task for the dwiref / dseg Niivue check (ignore `.tsv`, `.txt`, `.pscalar.nii`).
+| Rating | When to use |
+|--------|-------------|
+| **PASS** | Surface maps, parcellation alignment, and tissue curves all look plausible |
+| **FAIL** | Large holes on cortex, clear misalignment, or broken / overlapping tissue curves |
+| **UNCERTAIN** | Borderline — flag for supervisor review |
 
-## Purpose
+**Where files live:** `sample_data/noddireg/<subject>/`  
+- PNGs → `figures/`  
+- NIfTIs (`*_dwiref.nii.gz`, `*_dseg.nii.gz`) → subject root  
 
-Visually check that NODDI metrics were correctly registered to anatomy and that shared QC images look plausible before consortium release.
+**In QC-Studio:** Use task `noddireg_od_icvf_isovf` (surface PNGs), `noddireg_parcellation_overlay` (Niivue + slice PNGs), `noddireg_density` (tissue curves). Ignore `.tsv`, `.txt`, `.pscalar.nii`.
 
-## What to review
+---
 
-Each subject folder: `sample_data/noddireg/sub-XXXX/`
+## Files per session (`figures/`)
 
-Per DWI session, review 6 PNGs under `figures/`:
+| File pattern | Checks |
+|--------------|--------|
+| `*_icvf_mean_qc.png` | ICVF on cortical surface |
+| `*_od_mean_qc.png` | OD on cortical surface |
+| `*_isovf_mean_qc.png` | ISOVF on cortical surface |
+| `*_desc-4S1056Parcels_model-noddi_mdp-icvf_qa.png` | Parcellation on ICVF (slices) |
+| `*_desc-4S1056Parcels_model-noddi_mdp-od_qa.png` | Parcellation on OD (slices) |
+| `*_desc-dsegtissue_model-noddi_density.png` | ICVF / OD / ISOVF by tissue (CSF, GM, WM) |
 
-| File | What it checks |
-|------|----------------|
-| `figures/*_desc-4S1056Parcels_model-noddi_mdp-icvf_qa.png` | Parcellation alignment on ICVF |
-| `figures/*_desc-4S1056Parcels_model-noddi_mdp-od_qa.png` | Parcellation alignment on OD |
-| `figures/*_desc-dsegtissue_model-noddi_density.png` | NODDI distributions by CSF / GM / WM |
-| `figures/*_icvf_mean_qc.png` | ICVF on cortical surface |
-| `figures/*_od_mean_qc.png` | OD on cortical surface |
-| `figures/*_isovf_mean_qc.png` | ISOVF on cortical surface |
+**Metrics:** ICVF = intracellular volume fraction · OD = orientation dispersion · ISOVF = isotropic volume fraction
 
-## Metrics (reference)
+---
 
-| Metric | Meaning |
-|--------|---------|
-| ICVF | Intracellular volume fraction |
-| OD | Orientation dispersion |
-| ISOVF | Isotropic volume fraction |
+## Step 1 — Surface QC (3 PNGs)
 
-## QC steps (per subject/session)
+<img src="noddireg_QC_guidelines_assets/surface_qc_example.png" alt="2x2 cortical surface maps of NODDI values" width="720">
 
-### Step 1 — Surface QC PNGs
+*Example: 2×2 surface layout — LH lateral (top-left), LH medial (top-right), RH lateral (bottom-left), RH medial (bottom-right).*
 
-![](noddireg_QC_guidelines_assets/surface_qc_example.png)
-
-**Files:**
-
-- `figures/sub-XXXX_ses-XX_icvf_mean_qc.png`
-- `figures/sub-XXXX_ses-XX_od_mean_qc.png`
-- `figures/sub-XXXX_ses-XX_isovf_mean_qc.png`
-
-Each file shows a 2×2 cortical surface rendering of parcel-averaged NODDI values from the 4S1056 atlas.
-
-**Layout:**
-
-- Top left: Left hemisphere, lateral view
-- Top right: Left hemisphere, medial view
-- Bottom left: Right hemisphere, lateral view
-- Bottom right: Right hemisphere, medial view
-
-Color scale shows NODDI values across cortical parcels.
-
-**Check:**
-
-- Smooth, anatomically plausible cortical patterns
-- Most of the cortical surface is colored (few large gaps)
-- Gradual transitions between regions (no obvious artifact patches)
+**PASS if:**
+- Smooth, anatomically plausible patterns on cortex
+- Most of the surface is colored (few large gaps)
 - ICVF, OD, and ISOVF all look reasonable
-- Mild left-right asymmetry is acceptable
+- Mild left–right asymmetry is OK
 
 **FAIL if:**
+- Large holes or flat/near-zero maps across cortex
+- Obvious artifact patches or sharp discontinuities
+- Strong unexplained left–right differences
 
-- Large holes or missing regions across the cortical surface
-- Maps look flat or near-zero across most of cortex
-- Obvious artifact patches or extreme discontinuities
-- Strong unexplained left-right differences suggesting a processing error
+---
 
-### Step 2 — Parcellation overlay PNGs
+## Step 2 — Parcellation alignment (Niivue + slice PNGs)
 
-![](noddireg_QC_guidelines_assets/parcellation_alignment_example.png)
+### 3D overlay (QC-Studio: `noddireg_parcellation_overlay`)
 
-**Files (subject root + `figures/`):**
+Subject-level NIfTIs:
+- `sub-XXXX_*_space-T1w_dwiref.nii.gz` — DWI reference (one file per subject)
+- `sub-XXXX_space-T1w_ref-dwiref_desc-4S1056Parcels_dseg.nii.gz` — parcellation on DWI grid
 
-- `sub-XXXX_space-T1w_ref-dwiref_desc-4S1056Parcels_dseg.nii.gz` — 4S1056 parcellation resampled to the DWI reference grid (from noddi_reg)
-- `sub-XXXX_ses-XX_*_space-T1w_dwiref.nii.gz` — QSIPrep DWI reference image in T1w space (last DWI session; one file per subject)
+<img src="noddireg_QC_guidelines_assets/parcellation_alignment_example.png" alt="Parcellation labels aligned on DWI reference background" width="720">
 
-We overlay these two images to confirm they are aligned on the DWI reference grid.
+**PASS if:** Colored parcels sit on brain tissue and follow anatomy (not shifted into ventricles, skull, or background).
 
-**Check:**
+**FAIL if:** Clear shift, rotation, or scale error; parcels in non-brain tissue; large missing regions.
 
-The colored parcel labels should sit on brain tissue, follow cortical and subcortical anatomy, and not appear shifted, rotated, or scaled relative to the dwiref background. Parcel boundaries should not extend into ventricles, skull, or background, and expected brain regions should be covered.
+### Slice mosaic PNGs
 
-**FAIL if:**
+<img src="noddireg_QC_guidelines_assets/parcellation_overlay_example.png" alt="Parcellation overlaid on ICVF and OD slice mosaics" width="720">
 
-- Parcels are clearly shifted from brain tissue, appear in ventricles/skull/background, or large brain areas are missing parcels
+Same checks as above on the 2D mosaic figures (`*_mdp-icvf_qa.png`, `*_mdp-od_qa.png`).
 
-![](noddireg_QC_guidelines_assets/parcellation_overlay_example.png)
+---
 
-**Files (`figures/`):**
+## Step 3 — Tissue density curves (1 PNG)
 
-- `figures/sub-XXXX_ses-XX_desc-4S1056Parcels_model-noddi_mdp-icvf_qa.png`
-- `figures/sub-XXXX_ses-XX_desc-4S1056Parcels_model-noddi_mdp-od_qa.png`
+<img src="noddireg_QC_guidelines_assets/tissue_density_example.png" alt="ICVF, OD, and ISOVF density curves for CSF, GM, and WM" width="720">
 
-Mosaic slice views showing the 4S1056 parcellation (colored regions) overlaid semi-transparently on the underlying NODDI map.
+*Three panels (ICVF, OD, ISOVF). Each panel has CSF, GM, and WM curves. Not a brain slice — voxel histograms by tissue.*
 
-**Check:**
-
-- Parcels sit on brain tissue and follow anatomy
-- No obvious shift, rotation, or scaling error
-- Parcel boundaries do not extend into ventricles, skull, or background
-- Parcels cover expected brain regions
+**PASS if:**
+- **ICVF:** WM peak right of GM; CSF usually separate from brain tissue
+- **OD:** Tissue curves visibly different (not fully overlapping)
+- **ISOVF:** CSF peak right of WM/GM; CSF separable from brain tissue
 
 **FAIL if:**
-
-- Parcels clearly shifted relative to brain tissue
-- Parcels visible in ventricles, skull, or background
-- Large brain regions missing parcels, or parcels only outside brain
-
-### Step 3 — Tissue density PNG
-
-![](noddireg_QC_guidelines_assets/tissue_density_example.png)
-
-**File:** `figures/sub-XXXX_ses-XX_desc-dsegtissue_model-noddi_density.png`
-
-This plot checks whether NODDI values look biologically sensible when separated by tissue type (CSF, GM, WM). It does NOT show brain slices. It shows statistical distributions of voxel values.
-
-The plot is built from:
-
-- NODDI maps from AMICO (ICVF, OD, ISOVF)
-- Tissue labels from QSIPrep anatomical segmentation (dseg)
-- Only voxels with ICVF greater than 0 and less than 0.99 are included (bad or saturated voxels are removed)
-
-**Layout of the figure:** The figure has 3 side-by-side panels — Panel 1: icvf, Panel 2: od, Panel 3: isovf
-
-In each panel there are 3 colored curves (one per tissue):
-
-- CSF (cerebrospinal fluid)
-- GM (gray matter)
-- WM (white matter)
-
-**Check:**
-
-- **ICVF:** It reflects neurite density and WM peak is to the right of GM; CSF curve is usually separated from brain tissue.
-- **OD:** It reflects how spread out fiber directions are within a voxel so tissue curves should be visibly different. Curves should still look like real distributions. Complete overlap across all tissues is suspicious.
-- **ISOVF:** It captures free-water-like diffusion. CSF peak is to the right of WM/GM. WM and GM curves are usually lower and closer to each other than CSF. CSF should be clearly separable from brain tissue in most cases.
-
-**FAIL if:**
-
-- CSF, GM, and WM curves overlap almost completely in one or more panels
-- ICVF panel shows WM and GM at the same x position with no separation
-- ISOVF panel shows CSF not separated from brain tissue
-- One curve is mostly a spike at 0 or 1 (suggests masking/fitting problem)
-- Curves look flat, empty, or clearly broken
+- CSF / GM / WM curves overlap almost completely in any panel
+- ICVF: WM and GM peaks at same position
+- ISOVF: CSF not separated from brain tissue
+- Any curve is a spike at 0 or 1, or looks flat / empty
