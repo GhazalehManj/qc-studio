@@ -9,7 +9,7 @@ streamlit run ui/main.py --server.port=8501 -- \
   --qc_json ../pipelines/freesurfer/qc.json \
   --qc_task anat_wf_qc \
   --qc_pipeline freesurfer \
-  --dataset_dir sample_data \
+  --dataset_dir sample_data/fmriprep \
   --participant_list sample_data/qc_participants.tsv \
   --session_list ses-01,ses-02 \
   --output_dir ./output
@@ -23,6 +23,6 @@ This bundle defines a **single** task (`anat_wf_qc`). **`--qc_task all`** is equ
 
 Paths inside `qc.json` are relative to **`--dataset_dir`**. Use **`[[NIPOPPY_BIDS_PARTICIPANT_ID]]`** and **`[[NIPOPPY_BIDS_SESSION_ID]]`** where filenames include those entities.
 
-This pipeline’s **`qc.json`** points only at **fMRIPrep derivatives** (anatomical NIfTIs under `derivatives/fmriprep/<subject>/<session>/anat/` and figures under `derivatives/fmriprep/<subject>/figures/`). There is no separate FreeSurfer or fsQC sample tree to ship in this layout.
+This pipeline’s **`qc.json`** uses the same **flat fMRIPrep tree** as **`../fmriprep/qc.json`**: subject-level preproc/mask NIfTIs and `figures/` under **`sample_data/fmriprep/<subject>/`** (see **`ui/freesurfer_test.sh`**, which sets `--dataset_dir` to `sample_data/fmriprep`). There is no separate FreeSurfer or fsQC sample tree in this bundle.
 
-The bundled sample subject **`sub-CMH0001`** uses the same fMRIPrep-style paths as **`../fmriprep/qc.json`**; add the matching `anat/*.nii.gz` files if you want the Niivue anatomical panels to load (figures alone are enough for SVG-only viewing).
+The bundled sample subject **`sub-CMH0001`** ships preproc T1w and brain-mask NIfTIs at the subject root plus recon-all figures under `figures/`.

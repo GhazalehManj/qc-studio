@@ -30,4 +30,4 @@ Examples:
 
 Paths inside `qc.json` are relative to **`--dataset_dir`**. Use **`[[NIPOPPY_BIDS_PARTICIPANT_ID]]`** and **`[[NIPOPPY_BIDS_SESSION_ID]]`** where filenames include those entities. For QSIPrep’s internal workflow slug (`dwi_denoise_ses_01_…`), use **`[[NIPOPPY_QSIPREP_SESSION_SLUG]]`** (underscore form, e.g. `ses_02` for BIDS `ses-02`).
 
-Sample derivatives mirror a typical QSIPrep export: **`sample_data/derivatives/qsiprep/<subject>/figures/`** (no tool-version directory in this bundle). The shipped `qc.json` targets **`acq-multishelldir92`** and **`run-1`**.
+Sample data lives under **`sample_data/qsiprep/<subject>/figures/`**. The shipped `qc.json` targets **`acq-multishelldir92`** and **`run-1`**.

@@ -8,7 +8,7 @@
 #   ./qsiprep_test.sh
 #   ./qsiprep_test.sh ../pipelines/qsiprep/qc.json sdc_wf_qc
 #   ./qsiprep_test.sh ../pipelines/qsiprep/qc.json all
-#   QC_TASK=dwi_carpetplot_qc ./qsiprep_test.sh
+#   QC_TASK=dwi_b0ref_qc ./qsiprep_test.sh
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ qc_launch_script="main.py"
 qc_pipeline="qsiprep"
 qc_json="${1:-${QC_JSON:-../pipelines/qsiprep/qc.json}}"
 qc_task="${2:-${QC_TASK:-seg_brainmask_qc}}"
-dataset_dir="../sample_data"
+dataset_dir="../sample_data/qsiprep"
 participant_list="../sample_data/qc_participants.tsv"
 output_dir="./output"
 port_number="${PORT:-8501}"

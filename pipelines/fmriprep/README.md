@@ -31,6 +31,6 @@ Examples:
 
 Paths inside `qc.json` are relative to **`--dataset_dir`**. Use the **`[[NIPOPPY_BIDS_PARTICIPANT_ID]]`** and **`[[NIPOPPY_BIDS_SESSION_ID]]`** placeholders where filenames include those entities.
 
-The **3D Niivue panel** needs `base_mri_image_path` in each task. The bundled config uses **raw BIDS** under `bids/<subject>/<session>/` (T1w for `anat_wf_qc`, resting-state BOLD for `sdc_wf_qc` / `coreg_wf_qc`). Per session that is `anat/*_run-1_T1w.nii.gz` and `func/*_task-rest_run-1_bold.nii.gz`. A small demo subject **`sub-ED01`** is in the repo; **`sub-CMH0001`** BIDS is gitignored (large BOLD volumes) and should live only on your machine under `sample_data/bids/sub-CMH0001/`. Figures remain under **`sample_data/derivatives/fmriprep/<subject>/figures/`**. You can instead point `base_mri_image_path` at fMRIPrep outputs under `derivatives/fmriprep/<subject>/<session>/anat/` (e.g. `*_desc-preproc_T1w.nii.gz`) if you ship those NIfTIs.
+The **3D Niivue panel** needs `base_mri_image_path` in each task. The bundled config uses flat layout under **`sample_data/fmriprep/<subject>/`**: BIDS NIfTIs in `bids/`, figures in `figures/`, and subject-level preproc/mask NIfTIs at the subject root. Shipped **`sub-CMH0001`** BOLD files are **first-volume-only** (full runs exceed GitHub’s file-size limit). A small demo subject **`sub-ED01`** remains under **`sample_data/derivatives/fmriprep/`** (legacy layout).
 
-The FreeSurfer pipeline **`../freesurfer/qc.json`** expects fMRIPrep-style anatomical paths under `derivatives/fmriprep/…` when you use that task.
+The FreeSurfer pipeline **`../freesurfer/qc.json`** uses the same flat layout under **`sample_data/fmriprep/<subject>/`** (subject-level preproc/mask NIfTIs and `figures/`).

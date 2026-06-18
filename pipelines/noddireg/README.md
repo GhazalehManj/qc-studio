@@ -30,4 +30,4 @@ Examples:
 
 Paths inside `qc.json` are relative to **`--dataset_dir`**. Use **`[[NIPOPPY_BIDS_PARTICIPANT_ID]]`** and **`[[NIPOPPY_BIDS_SESSION_ID]]`** where filenames include those entities.
 
-Expected layout: **`sample_data/derivatives/noddireg/<subject>/`** with PNGs named like `<subject>_<session>_desc-dsegtissue_model-noddi_density.png` and the OD / ICVF / ISOVF QC images referenced in `noddireg_od_icvf_isovf`. There are no NIfTI panels in the shipped `qc.json`; QC is figure-based only.
+Expected layout: **`sample_data/noddireg/<subject>/`** with PNGs under `figures/` and subject-level NIfTIs (`*_dwiref.nii.gz`, `*_dseg.nii.gz`) for the parcellation overlay task.

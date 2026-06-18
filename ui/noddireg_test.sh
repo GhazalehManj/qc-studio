@@ -9,8 +9,7 @@
 #   ./noddireg_test.sh ../pipelines/noddireg/qc.json noddireg_od_icvf_isovf
 #   ./noddireg_test.sh ../pipelines/noddireg/qc.json all
 #
-# Note: bundled sample_data may not include derivatives/noddireg/; point --dataset_dir at a tree that does,
-# or add PNGs under sample_data/derivatives/noddireg/<subject>/ matching qc.json.
+# Point --dataset_dir at sample_data/noddireg (flat per-subject tree; see pipelines/noddireg/README.md).
 
 set -euo pipefail
 
@@ -18,7 +17,7 @@ qc_launch_script="main.py"
 qc_pipeline="noddireg"
 qc_json="${1:-${QC_JSON:-../pipelines/noddireg/qc.json}}"
 qc_task="${2:-${QC_TASK:-noddireg_density}}"
-dataset_dir="../sample_data"
+dataset_dir="../sample_data/noddireg"
 participant_list="../sample_data/qc_participants.tsv"
 output_dir="./output"
 port_number="${PORT:-8501}"

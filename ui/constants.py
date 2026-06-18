@@ -51,6 +51,8 @@ QC_DEDUP_KEYS = ["participant_id", "session_id", "pipeline", "qc_task"]
 NIIVUE_HEIGHT = 600
 SVG_HEIGHT = 600
 IQM_HEIGHT = 400
+# Streamlit component messages are capped (~200 MB); keep NIfTI payloads below this.
+NIIVUE_MAX_FILE_BYTES = 150 * 1024 * 1024
 DEFAULT_VIEW_MODE = "multiplanar"
 VIEW_MODES = ["multiplanar", "axial", "coronal", "sagittal", "3d"]
 OVERLAY_COLORMAPS = ["cool", "warm"]
@@ -171,6 +173,11 @@ ERROR_MESSAGES = {
     'csv_comparison_error': 'Could not display comparison: {error}',
     'mri_load_error': 'Failed to load base MRI in Niivue viewer: {error}',
     'base_mri_not_found': 'Base MRI image not found or could not be loaded.',
+    'base_mri_too_large': (
+        'Volume too large for the 3D viewer ({size_mb:.0f} MB; limit {limit_mb:.0f} MB). '
+        'Use the SVG montage panel for this task.'
+    ),
+    'base_mri_preview_reduced': 'Showing first BOLD volume (full 4D file is too large for the browser).',
     'svg_not_found': 'SVG montage not found or could not be loaded.',
     'participant_list_load_error': 'Error loading participant list: {error}',
 }
