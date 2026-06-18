@@ -9,7 +9,7 @@ streamlit run ui/main.py --server.port=8501 -- \
   --qc_json ../pipelines/qsiprep/qc.json \
   --qc_task seg_brainmask_qc \
   --qc_pipeline qsiprep \
-  --dataset_dir sample_data \
+  --dataset_dir sample_data/qsiprep \
   --participant_list sample_data/qc_participants.tsv \
   --session_list ses-01,ses-02 \
   --output_dir ./output
@@ -17,7 +17,9 @@ streamlit run ui/main.py --server.port=8501 -- \
 
 Use **`--session_list`** with comma-separated BIDS session labels (e.g. `ses-01,ses-02`). The app builds one review **page** per **(participant × session)** from your participant list. If `qc_participants.tsv` includes a **`session_id`** column, that file defines the exact rows instead (one row per participant–session pair).
 
-### Multiple tasks in `qc.json` (`seg_brainmask_qc`, `t1_2_mni_qc`, `sdc_wf_qc`, …)
+### Multiple tasks in `qc.json` (`seg_brainmask_qc`, `t1_2_mni_qc`, `sdc_wf_qc`, `coreg_wf_qc`)
+
+See **`qsiprep_QC_guidelines.md`** for pass/fail criteria. `qc.json` defines **four** tasks matching the doc panels.
 
 `qc.json` can define **several** tasks. You choose how to run QC-Studio:
 

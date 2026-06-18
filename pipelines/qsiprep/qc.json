@@ -10,8 +10,5 @@
     },
     "coreg_wf_qc": {
         "svg_montage_path": "[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_acq-multishelldir92_run-1_coreg.svg"
-    },
-    "dwi_b0ref_qc": {
-        "svg_montage_path": "[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_acq-multishelldir92_run-1_desc-resampled_b0ref.svg"
     }
 }

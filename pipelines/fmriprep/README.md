@@ -7,9 +7,9 @@ Example (after `cd` to the qc-studio root):
 ```bash
 streamlit run ui/main.py --server.port=8501 -- \
   --qc_json ../pipelines/fmriprep/qc.json \
-  --qc_task anat_wf_qc \
+  --qc_task sdc_wf_qc \
   --qc_pipeline fmriprep \
-  --dataset_dir sample_data \
+  --dataset_dir sample_data/fmriprep \
   --participant_list sample_data/qc_participants.tsv \
   --session_list ses-01,ses-02 \
   --output_dir ./output
@@ -17,17 +17,19 @@ streamlit run ui/main.py --server.port=8501 -- \
 
 Use **`--session_list`** with comma-separated BIDS session labels (e.g. `ses-01,ses-02`). The app builds one review **page** per **(participant × session)** from your participant list. If `qc_participants.tsv` includes a **`session_id`** column, that file defines the exact rows instead (one row per participant–session pair).
 
-### Multiple tasks in `qc.json` (`anat_wf_qc`, `sdc_wf_qc`, `coreg_wf_qc`, …)
+### Multiple tasks in `qc.json` (`sdc_wf_qc`, `coreg_wf_qc`)
+
+Anatomical / recon-all QC is handled by **`../freesurfer/qc.json`** (`anat_wf_qc`). This fMRIPrep bundle covers **functional** QC only.
 
 `qc.json` can define **several** tasks. You choose how to run QC-Studio:
 
-- **One task per run** (default): pass the task key with **`--qc_task`** (e.g. `anat_wf_qc`). The UI does not switch tasks mid-session.
+- **One task per run** (default): pass the task key with **`--qc_task`** (e.g. `sdc_wf_qc`). The UI does not switch tasks mid-session.
 - **All tasks on one scrollable page**: use **`--qc_task all`**. Each cohort page gets a PASS / FAIL / UNCERTAIN (and notes) **per task**, and the sidebar marks a page complete only when **every** task in `qc.json` has a decided rating.
 
 Examples:
 
-- From repo root with **`fmriprep_demo.sh`**: set **`QC_TASK`** (default `anat_wf_qc`), e.g. `QC_TASK=sdc_wf_qc ./fmriprep_demo.sh`, or `QC_TASK=all …` for every task on one page.
-- From `ui/` with **`fmriprep_test.sh`**: use **`QC_TASK`**, or pass the task as the **second** argument after `qc.json`, e.g. `./fmriprep_test.sh ../pipelines/fmriprep/qc.json coreg_wf_qc`, or `./fmriprep_test.sh ../pipelines/fmriprep/qc.json all`.
+- From repo root with **`fmriprep_demo.sh`**: uses legacy **`qc_demo.json`** (includes `anat_wf_qc` for `sub-ED01`). For CMH0001 sample data, use **`ui/fmriprep_test.sh`** instead.
+- From `ui/` with **`fmriprep_test.sh`**: default **`sdc_wf_qc`**, or `./fmriprep_test.sh ../pipelines/fmriprep/qc.json all` for every task on one page.
 
 Paths inside `qc.json` are relative to **`--dataset_dir`**. Use the **`[[NIPOPPY_BIDS_PARTICIPANT_ID]]`** and **`[[NIPOPPY_BIDS_SESSION_ID]]`** placeholders where filenames include those entities.
 
