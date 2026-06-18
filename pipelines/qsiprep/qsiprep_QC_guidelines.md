@@ -93,7 +93,7 @@ Susceptibility Distortion Correction (SDC) checks whether distortion in the diff
 
 ### What the Red Outline Means
 
-The red outline represents the reference anatomical/brain boundary used to judge alignment.
+The red outline represents the reference anatomical/brain boundary used to judge alignment. Some parts may look incomplete because of weak signal or signal loss, especially in medial regions. This can still pass if the correction works overall.
 
 ### What to Check
 
@@ -104,7 +104,10 @@ The red outline represents the reference anatomical/brain boundary used to judge
 
 ### Good Example
 
-<p align="center"><img src="qsiprep_QC_guidelines_assets/sdc_good_example.png" alt="sdc_wf_qc — good example" width="900"></p>
+<p align="center">
+  <img src="qsiprep_QC_guidelines_assets/sdc_good_example_before.png" alt="sdc_wf_qc — good example (before)" width="900"><br>
+  <img src="qsiprep_QC_guidelines_assets/sdc_good_example_after.png" alt="sdc_wf_qc — good example (after)" width="900">
+</p>
 
 The corrected version moves closer to the red outline.
 
@@ -114,7 +117,10 @@ The corrected version moves closer to the red outline.
 
 The corrected version moves away from the red outline and the brain gets more distorted. **→ FAIL**
 
-<p align="center"><img src="qsiprep_QC_guidelines_assets/sdc_miscorrection.png" alt="sdc_wf_qc — miscorrection" width="900"></p>
+<p align="center">
+  <img src="qsiprep_QC_guidelines_assets/sdc_miscorrection_1.png" alt="sdc_wf_qc — miscorrection" width="900"><br>
+  <img src="qsiprep_QC_guidelines_assets/sdc_miscorrection_2.png" alt="sdc_wf_qc — miscorrection" width="900">
+</p>
 
 #### Signal dropout
 

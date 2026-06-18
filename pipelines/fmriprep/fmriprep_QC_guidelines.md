@@ -32,6 +32,8 @@ Susceptibility Distortion Correction (SDC) checks whether distortion in the func
 
 In the SDC QC images, the red outline represents the reference anatomical/brain boundary used to judge alignment. The red outline helps show where the corrected EPI image should approximately fit after distortion correction.
 
+Some parts of the red outline may look incomplete because of weak signal or signal loss, especially in medial regions. This can still pass if the correction works overall.
+
 ### What to Check
 
 - Check that the participant image includes the brain only and does not include major non-brain structures such as the skull or spinal cord.
@@ -41,7 +43,10 @@ In the SDC QC images, the red outline represents the reference anatomical/brain 
 
 ### Good Example
 
-<p align="center"><img src="fmriprep_QC_guidelines_assets/sdc_good_example.png" alt="sdc_wf_qc — good example" width="900"></p>
+<p align="center">
+  <img src="fmriprep_QC_guidelines_assets/sdc_good_example_before.png" alt="sdc_wf_qc — good example (before)" width="900"><br>
+  <img src="fmriprep_QC_guidelines_assets/sdc_good_example_after.png" alt="sdc_wf_qc — good example (after)" width="900">
+</p>
 
 The corrected version moves closer to the red outline.
 
@@ -51,13 +56,19 @@ The corrected version moves closer to the red outline.
 
 The corrected version moves away from the red outline and the brain gets more distorted. **→ FAIL**
 
-<p align="center"><img src="fmriprep_QC_guidelines_assets/sdc_miscorrection.png" alt="sdc_wf_qc — miscorrection" width="900"></p>
+<p align="center">
+  <img src="fmriprep_QC_guidelines_assets/sdc_miscorrection_1.png" alt="sdc_wf_qc — miscorrection" width="900"><br>
+  <img src="fmriprep_QC_guidelines_assets/sdc_miscorrection_2.png" alt="sdc_wf_qc — miscorrection" width="900">
+</p>
 
 #### Distorted image
 
 The corrected images are very distorted. The shape of the brain and the outline do not match. **→ FAIL**
 
-<p align="center"><img src="fmriprep_QC_guidelines_assets/sdc_distorted.png" alt="sdc_wf_qc — distorted image" width="900"></p>
+<p align="center">
+  <img src="fmriprep_QC_guidelines_assets/sdc_distorted_1.png" alt="sdc_wf_qc — distorted image" width="900"><br>
+  <img src="fmriprep_QC_guidelines_assets/sdc_distorted_2.png" alt="sdc_wf_qc — distorted image" width="900">
+</p>
 
 #### Signal dropout
 
@@ -96,7 +107,16 @@ Shadows around the outside of the brain. Usually **PASS** if it stays in the bac
 
 Ventricles appear stretched after SDC correction. Mild stretching can **PASS**; significant stretching → **FAIL** or **UNCERTAIN**.
 
-<p align="center"><img src="fmriprep_QC_guidelines_assets/sdc_ventricular_stretching.png" alt="sdc_wf_qc — ventricular stretching" width="900"></p>
+<p align="center">
+  <img src="fmriprep_QC_guidelines_assets/sdc_ventricular_stretching_1.png" alt="sdc_wf_qc — ventricular stretching" width="900"><br>
+  <img src="fmriprep_QC_guidelines_assets/sdc_ventricular_stretching_2.png" alt="sdc_wf_qc — ventricular stretching" width="900">
+</p>
+
+#### Weak signal or signal loss
+
+Incomplete red outline due to weak medial signal. Can **PASS** if correction still works overall.
+
+<p align="center"><img src="fmriprep_QC_guidelines_assets/sdc_weak_signal.png" alt="sdc_wf_qc — weak signal or signal loss" width="900"></p>
 
 #### Skull or spinal cord included
 

@@ -58,34 +58,53 @@ Color scale shows NODDI values across cortical parcels.
 
 ## Parcellation Overlay (`noddireg_parcellation_overlay`)
 
-Parcellation overlay checks alignment between the DWI reference image and the 4S1056 parcellation, both in Niivue (interactive) and in QA PNG mosaics.
+Parcellation overlay checks alignment between the DWI reference image and the 4S1056 parcellation in two views: the **Niivue 3D MRI panel** (interactive) and **QA PNG mosaics** (slice views).
 
-**Files (subject root + `figures/`):**
+### Niivue 3D MRI overlay
+
+In QC-Studio, the left panel shows the DWI reference (`*_space-T1w_dwiref.nii.gz`) with the parcellation overlay (`*_desc-4S1056Parcels_dseg.nii.gz`). Use the Niivue controls to inspect alignment in 3D and across slices.
+
+**Files (subject root):**
 
 - `sub-XXXX_ses-XX_*_space-T1w_dwiref.nii.gz` — QSIPrep DWI reference in T1w space
-- `sub-XXXX_space-T1w_ref-dwiref_desc-4S1056Parcels_dseg.nii.gz` — parcellation resampled to the DWI reference grid
+- `sub-XXXX_space-T1w_ref-dwiref_desc-4S1056Parcels_dseg.nii.gz` — 4S1056 parcellation resampled to the DWI reference grid
+
+<p align="center"><img src="noddireg_QC_guidelines_assets/parcellation_alignment_example.png" alt="noddireg_parcellation_overlay — Niivue 3D MRI overlay" width="900"></p>
+
+**Check:**
+
+The colored parcel labels should sit on brain tissue, follow cortical and subcortical anatomy, and not appear shifted, rotated, or scaled relative to the dwiref background. Parcel boundaries should not extend into ventricles, skull, or background, and expected brain regions should be covered.
+
+**FAIL if:**
+
+- Parcels are clearly shifted from brain tissue, appear in ventricles/skull/background, or large brain areas are missing parcels
+
+### QA PNG mosaics
+
+**Files (`figures/`):**
+
 - `figures/sub-XXXX_ses-XX_desc-4S1056Parcels_model-noddi_mdp-icvf_qa.png`
 - `figures/sub-XXXX_ses-XX_desc-4S1056Parcels_model-noddi_mdp-od_qa.png`
 
 Mosaic slice views show the 4S1056 parcellation (colored regions) overlaid semi-transparently on the underlying NODDI map.
-
-### Good Example
 
 <p align="center">
   <img src="noddireg_QC_guidelines_assets/parcellation_overlay_icvf_qa.png" alt="noddireg_parcellation_overlay — ICVF QA mosaic" width="48%">
   <img src="noddireg_QC_guidelines_assets/parcellation_overlay_od_qa.png" alt="noddireg_parcellation_overlay — OD QA mosaic" width="48%">
 </p>
 
-### What to Check
+**Check:**
 
-- Parcels sit on brain tissue and follow cortical and subcortical anatomy
-- No obvious shift, rotation, or scaling error relative to the dwiref background
+- Parcels sit on brain tissue and follow anatomy
+- No obvious shift, rotation, or scaling error
 - Parcel boundaries do not extend into ventricles, skull, or background
-- Expected brain regions are covered
+- Parcels cover expected brain regions
 
-### Common Issues — **FAIL if:**
+**FAIL if:**
 
-- Parcels are clearly shifted from brain tissue, appear in ventricles/skull/background, or large brain areas are missing parcels
+- Parcels clearly shifted relative to brain tissue
+- Parcels visible in ventricles, skull, or background
+- Large brain regions missing parcels, or parcels only outside brain
 
 ## Tissue Density Distributions (`noddireg_density`)
 

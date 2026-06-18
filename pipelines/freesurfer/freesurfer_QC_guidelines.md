@@ -68,21 +68,15 @@ Occurs when major parts of the cortex are excluded from the outline. For example
 
 A common issue is the temporal lobe being excluded from the outlining. This should be checked carefully across all axes. If the exclusion is major, the scan should be failed or flagged for supervisor review.
 
-<p align="center"><img src="freesurfer_QC_guidelines_assets/temporal_lobe_excluded.png" alt="anat_wf_qc — temporal lobe excluded" width="900"></p>
-
-#### Missing major parts of cerebellum from outline
-
-If major parts of the cerebellum are missing from the outline, the scan can still Pass.
-
-<p align="center"><img src="freesurfer_QC_guidelines_assets/missing_cerebellum_pass.png" alt="anat_wf_qc — missing cerebellum (can pass)" width="900"></p>
+<p align="center"><img src="freesurfer_QC_guidelines_assets/temporal_lobe_excluded.png" alt="anat_wf_qc — temporal lobe excluded" width="520"></p>
 
 #### Minor portion of skull included
 
 The participant brain should only include brain and should not include skull. However, skull appearing in the background does not automatically mean fail. The scan should fail only if the red or blue outline extends into the skull.
 
 <p align="center">
-  <img src="freesurfer_QC_guidelines_assets/minor_skull_1.png" alt="anat_wf_qc — minor skull included" width="48%">
-  <img src="freesurfer_QC_guidelines_assets/minor_skull_2.png" alt="anat_wf_qc — minor skull included" width="48%">
+  <img src="freesurfer_QC_guidelines_assets/minor_skull_1.png" alt="anat_wf_qc — minor skull included" width="900"><br>
+  <img src="freesurfer_QC_guidelines_assets/minor_skull_2.png" alt="anat_wf_qc — minor skull included" width="900">
 </p>
 
 #### Minor portion of cerebellum included
