@@ -1,7 +1,5 @@
 # XCP-D QC
 
-Written by Thomas Tan (Thomas.Tan@camh.ca)
-
 **Location (repo sample):** `sample_data/xcpd/<subject>/figures/`. In production, point `--dataset_dir` at your XCP-D share (same flat layout per subject).
 
 **In QC-Studio:** `atlas_coverage_qc`, `coreg_wf_qc`, `denoised_bold_qc`.
