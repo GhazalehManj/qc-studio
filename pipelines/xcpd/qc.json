@@ -1,0 +1,18 @@
+{
+    "seg_brainmask_qc": {
+        "svg_montage_path": [
+            "[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_run-1_desc-Axial*_T1w.png",
+            "[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_run-1_desc-Coronal*_T1w.png",
+            "[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_run-1_desc-Sagittal*_T1w.png"
+        ]
+    },
+    "coreg_wf_qc": {
+        "svg_montage_path": "[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_task-emp_run-1_space-MNI152NLin2009cAsym_desc-bbregister_bold.svg"
+    },
+    "denoised_bold_qc": {
+        "svg_montage_path": [
+            "[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_task-emp_run-1_space-fsLR_desc-preprocESQC_bold.svg",
+            "[[NIPOPPY_BIDS_PARTICIPANT_ID]]/figures/[[NIPOPPY_BIDS_PARTICIPANT_ID]]_[[NIPOPPY_BIDS_SESSION_ID]]_task-emp_run-1_space-fsLR_desc-postprocESQC_bold.svg"
+        ]
+    }
+}
