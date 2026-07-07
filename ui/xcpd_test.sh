@@ -3,19 +3,19 @@
 #
 # Optional arguments:
 #   $1 — path to qc.json (default: ../pipelines/xcpd/qc.json)
-#   $2 — qc_task name (default: seg_brainmask_qc). Same as env QC_TASK. Use "all" for every task in qc.json on one page.
+#   $2 — qc_task name (default: atlas_coverage_qc). Same as env QC_TASK. Use "all" for every task in qc.json on one page.
 # Examples:
 #   ./xcpd_test.sh
-#   ./xcpd_test.sh ../pipelines/xcpd/qc.json seg_brainmask_qc
+#   ./xcpd_test.sh ../pipelines/xcpd/qc.json atlas_coverage_qc
 #   ./xcpd_test.sh ../pipelines/xcpd/qc.json all
-#   QC_TASK=seg_brainmask_qc ./xcpd_test.sh
+#   QC_TASK=coreg_wf_qc ./xcpd_test.sh
 
 set -euo pipefail
 
 qc_launch_script="main.py"
 qc_pipeline="xcpd"
 qc_json="${1:-${QC_JSON:-../pipelines/xcpd/qc.json}}"
-qc_task="${2:-${QC_TASK:-all}}"
+qc_task="${2:-${QC_TASK:-atlas_coverage_qc}}"
 dataset_dir="../sample_data/xcpd"
 participant_list="../sample_data/qc_participants.tsv"
 output_dir="./output"
