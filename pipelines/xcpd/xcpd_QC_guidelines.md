@@ -30,23 +30,24 @@ Atlas coverage checks whether the parcellation atlas was applied correctly acros
 
 ### What to Check
 
-- No missing or flat blocks in ROI-to-ROI correlations
-- Values appear within plausible range (e.g., -1 to +1)
+- Review all nine T1 montages (three axial, three coronal, three sagittal).
+- Check that atlas parcellation boundaries are visible and follow plausible anatomy in each view.
+- Check that major brain regions are represented across views, without large gaps or missing coverage.
 
 | | Criteria |
 |---|---|
-| **Pass** | All ROIs represented with plausible correlations |
+| **Pass** | Atlas boundaries visible on all montages; coverage looks complete across the brain; no obvious misregistration of atlas to anatomy |
 | **Uncertain** | — |
-| **Fail** | Missing ROIs; large flat regions indicating failure in time series extraction |
+| **Fail** | Large missing regions; atlas clearly misaligned with anatomy; parcellation appears absent or failed on multiple views |
 
 **Action if Fail:**
-- Verify atlas files were applied correctly
-- Check parcellated time series files for missing data
-- Re-run XCP-D with correct atlas input
+- Verify the correct atlas was specified in XCP-D
+- Check T1w preprocessing and normalization inputs
+- Re-run XCP-D with the intended atlas configuration
 
 ### Good Example
 
-Atlas/ROI coverage across the brain (used to visually confirm parcellation was applied correctly):
+Atlas coverage across the brain on axial, coronal, and sagittal T1 montages:
 
 | | | |
 |---|---|---|

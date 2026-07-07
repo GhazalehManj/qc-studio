@@ -15,7 +15,7 @@ streamlit run ui/main.py --server.port=8501 -- \
   --output_dir ./output
 ```
 
-Use **`--session_list`** with comma-separated BIDS session labels (e.g. `ses-01,ses-02`). The app builds one review **page** per **(participant × session)** from your participant list. If `qc_participants.tsv` includes a **`session_id`** column, that file defines the exact rows instead (one row per participant–session pair).
+Use **`--session_list`** with comma-separated BIDS session labels (e.g. `ses-01`). The app builds one review **page** per **(participant × session)** from your participant list. If `qc_participants.tsv` includes a **`session_id`** column, that file defines the exact rows instead (one row per participant–session pair).
 
 ### Multiple tasks in `qc.json` (`atlas_coverage_qc`, `coreg_wf_qc`, `denoised_bold_qc`)
 
