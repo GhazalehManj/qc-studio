@@ -28,6 +28,8 @@ If the scan clearly meets the pass criteria, mark it as **PASS**. If it clearly 
 
 Atlas coverage checks whether the parcellation atlas was applied correctly across major brain regions. Review the axial, coronal, and sagittal T1 montages for complete, plausible atlas coverage.
 
+> **Note (XCP-D 0.7.3):** There is a known bug in XCP-D 0.7.3 where the `atlas_coverage_qc` montages (axial, coronal, and sagittal `*_T1w.png` figures from `svg_montage_path`) may appear misaligned. This is a display issue in XCP-D and does not necessarily indicate a real registration failure. If fMRIPrep QC is acceptable—including functional-to-T1w alignment in `coreg_wf_qc`—you may still **PASS** atlas coverage.
+
 ### What to Check
 
 - Review all nine T1 montages (three axial, three coronal, three sagittal).
