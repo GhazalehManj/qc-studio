@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta
 from constants import SVG_HEIGHT, MESSAGES, ERROR_MESSAGES, QC_RATINGS, NIIVUE_SECONDARY_RATIO, VIEW_MODES, OVERLAY_COLORMAPS
 from utils.data_loaders import load_svg_data
-from utils.config import parse_qc_config
+from utils.config import format_qc_tasks_per_page_summary, parse_qc_config
 from managers.niivue_viewer_manager import NiivueViewerManager, NiivueViewerConfig
 from managers.session_manager import SessionManager
 from models import QCRecord
@@ -189,12 +189,19 @@ def display_qc_viewers(
 
 	_render_autoplay_countdown_main_banner()
 
+	sid = session_id or "ses-01"
+	st.subheader(
+		f"{participant_id} · {sid} · {qc_pipeline} · "
+		f"{format_qc_tasks_per_page_summary(tasks, qc_config_path)}"
+	)
+
 	for i, tname in enumerate(tasks):
 		qc_config = parse_qc_config(qc_config_path, tname, substitution_values)
+		display_label = qc_config.get("display_name") or tname
 		if multi_task:
 			if i > 0:
 				st.divider()
-			st.subheader(tname)
+			st.subheader(display_label)
 		task_has_niivue = show_niivue and bool(qc_config.get("base_mri_image_path"))
 		if task_has_niivue and show_svg and show_iqm:
 			_display_niivue_with_secondary_panel(
@@ -218,6 +225,7 @@ def display_qc_viewers(
 			participant_id=participant_id,
 			session_id=session_id,
 			qc_task=tname,
+			display_label=display_label,
 			notes_height=88 if multi_task else 120,
 		)
 
@@ -370,10 +378,12 @@ def _display_qc_rating_for_task(
 	session_id: str | None,
 	qc_task: str,
 	*,
+	display_label: str | None = None,
 	notes_height: int = 120,
 ) -> None:
 	"""PASS/FAIL/UNCERTAIN and notes for one task (shown under that task's viewers)."""
-	st.markdown(f"#### 📊 Rate `{qc_task}`")
+	label = (display_label or qc_task).strip()
+	st.markdown(f"#### 📊 Rate **{label}**")
 	rver = SessionManager.get_rating_version()
 	nver = SessionManager.get_notes_version()
 	existing_record = SessionManager.get_qc_record_for_participant(participant_id, session_id, qc_task)
